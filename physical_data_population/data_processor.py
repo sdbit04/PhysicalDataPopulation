@@ -15,8 +15,8 @@ class DataProcessor(FileReader):
     def report_missing_attributes(self, report_dict, sd_input_row,sd_rnc_sector_key ):
         missing_attributes = []
         for index in range(2, 10):
-            field_name =self.data_reader_ob.SD_fields_need_to_update[index]
-            field_value = sd_input_row[self.data_reader_ob.SD_fields_need_to_update[index]]
+            field_name =self.SD_fields_need_to_update[index]
+            field_value = sd_input_row[self.SD_fields_need_to_update[index]]
             print("field name is ={}".format(field_name))
             print("field_value = {}".format(field_value))
             if field_value is not None and len(str(field_value)) == 0:
@@ -32,13 +32,12 @@ class DataProcessor(FileReader):
                                    input_sgi_file_path, profile_root_path_p):
         sd_ob_out = {}
         report = {}
-        # r = 0
         n = 0
         # travers through planner file
-        planner_object = self.data_reader_ob.read_planner_file(input_planner_file_path)
-        sd_object = self.data_reader_ob.read_sd_antennas_file(input_sd_file_path)
-        lte_carrier_ob = self.data_reader_ob.read_lte_carrier(input_lte_carrier_path)
-        sgi_file_ob = self.data_reader_ob.read_gsi_file(input_sgi_file_path)
+        planner_object = self.read_planner_file(input_planner_file_path)
+        sd_object = self.read_sd_antennas_file(input_sd_file_path)
+        lte_carrier_ob = self.read_lte_carrier(input_lte_carrier_path)
+        sgi_file_ob = self.read_gsi_file(input_sgi_file_path)
         # print(sd_object)
         # Here the planner_object and sd_object are dictionary
         profile_root_path = profile_root_path_p
@@ -57,21 +56,48 @@ class DataProcessor(FileReader):
                 report_line = "RNC-Sector\t{0}\thas No match in 1st-level-planner file, process will look for lte_carrier, and GSI files".format(
                     sd_rnc_sector_key)
                 report[sd_rnc_sector_key].append(report_line)
-
                 # TODO need to add lookup with lte_carrier and SGI-file
                 try:
                     lte_carrier_input = lte_carrier_ob[sd_rnc_sector_key]
-                    required_part_of_sector_carrier = str(lte_carrier_input['Sector Carrier Name']).split('-')
-                    mcc_mnc_sector_carrier_key = '{0}-{1}-{2}-{3}'.format(lte_carrier_input['MCC'], lte_carrier_input['MNC'], required_part_of_sector_carrier[1], required_part_of_sector_carrier[2])
+                    sector_carrier_name = str(lte_carrier_input['Sector Carrier Name'])
+                    required_part_of_sector_carrier = sector_carrier_name.split('-')
+                    try:
+                        required_part_of_sector_carrier_1 = required_part_of_sector_carrier[1]
+                        required_part_of_sector_carrier_2 = required_part_of_sector_carrier[2]
+                        mcc_mnc_sector_carrier_key = '{0}-{1}-{2}-{3}'.format(lte_carrier_input['MCC'], lte_carrier_input['MNC'], required_part_of_sector_carrier_1,required_part_of_sector_carrier_2)
+                    except IndexError:
+                        print("Incorrect format of sector_carrier_name {}".format(sector_carrier_name))
+                        # TODO update the row by populating required fields by blank as no match found
+                        # TODO def update_input_row_by_blank()
+                        sd_input_row[self.SD_fields_need_to_update[2]] = None
+                        sd_input_row[self.SD_fields_need_to_update[3]] = None
+                        sd_input_row[self.SD_fields_need_to_update[4]] = None
+                        sd_input_row[self.SD_fields_need_to_update[5]] = None
+                        sd_input_row[self.SD_fields_need_to_update[6]] = None
+                        sd_input_row[self.SD_fields_need_to_update[7]] = None
+                        sd_input_row[self.SD_fields_need_to_update[8]] = None
+                        sd_input_row[self.SD_fields_need_to_update[10]] = None
+                        sd_input_row[self.SD_fields_need_to_update[9]] = None
+                        sd_ob_out[n] = sd_input_row
+                        n += 1
+                        continue
                 except KeyError:
                     print(
                         "Key {} not even found into lte_carrier, so not updating physical data for this sector".format(
                             sd_rnc_sector_key))
-
                     report_line = "RNC-Sector\t{0}\thas No match in 1st-level-planner and not even in lte_carrier file".format(sd_rnc_sector_key)
                     report[sd_rnc_sector_key].append(report_line)
                     report_line = "RNC-Sector\t{0}\thas missing fields = NodeB Longitude, NodeB Latitude,Antenna Longitude, Antenna Latitude, Height, Mechanical DownTilt, Azimuth, Antenna Model".format(sd_rnc_sector_key)
                     report[sd_rnc_sector_key].append(report_line)
+                    sd_input_row[self.SD_fields_need_to_update[2]] = None
+                    sd_input_row[self.SD_fields_need_to_update[3]] = None
+                    sd_input_row[self.SD_fields_need_to_update[4]] = None
+                    sd_input_row[self.SD_fields_need_to_update[5]] = None
+                    sd_input_row[self.SD_fields_need_to_update[6]] = None
+                    sd_input_row[self.SD_fields_need_to_update[7]] = None
+                    sd_input_row[self.SD_fields_need_to_update[8]] = None
+                    sd_input_row[self.SD_fields_need_to_update[10]] = None
+                    sd_input_row[self.SD_fields_need_to_update[9]] = None
                     sd_ob_out[n] = sd_input_row
                     n += 1
                 else:
@@ -84,35 +110,40 @@ class DataProcessor(FileReader):
                         report_line = "RNC-Sector\t{0}\tthere was match in lte_carrier, but corresponding ##MCC-MNC-SECTOR_CARRIER## key\t{1}\tnot in GIS file,".format(
                             sd_rnc_sector_key, mcc_mnc_sector_carrier_key)
                         report[sd_rnc_sector_key].append(report_line)
-
                         self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
-
+                        sd_input_row[self.SD_fields_need_to_update[2]] = None
+                        sd_input_row[self.SD_fields_need_to_update[3]] = None
+                        sd_input_row[self.SD_fields_need_to_update[4]] = None
+                        sd_input_row[self.SD_fields_need_to_update[5]] = None
+                        sd_input_row[self.SD_fields_need_to_update[6]] = None
+                        sd_input_row[self.SD_fields_need_to_update[7]] = None
+                        sd_input_row[self.SD_fields_need_to_update[8]] = None
+                        sd_input_row[self.SD_fields_need_to_update[10]] = None
+                        sd_input_row[self.SD_fields_need_to_update[9]] = None
                         sd_ob_out[n] = sd_input_row
                         n += 1
                     else:
                         print("Key {} was FOUND into CGI file".format(mcc_mnc_sector_carrier_key))
                         print("matching_cgi_data_input is {}".format(matching_cgi_data_input))
-                        sd_input_row[self.data_reader_ob.SD_fields_need_to_update[2]] = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[2]]
-                        sd_input_row[self.data_reader_ob.SD_fields_need_to_update[3]] = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[3]]
-                        sd_input_row[self.data_reader_ob.SD_fields_need_to_update[4]] = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[4]]
-                        sd_input_row[self.data_reader_ob.SD_fields_need_to_update[5]] = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[5]]
-                        sd_input_row[self.data_reader_ob.SD_fields_need_to_update[6]] = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[6]]
-                        sd_input_row[self.data_reader_ob.SD_fields_need_to_update[7]] = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[7]]
-                        sd_input_row[self.data_reader_ob.SD_fields_need_to_update[8]] = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[8]]
+                        sd_input_row[self.SD_fields_need_to_update[2]] = matching_cgi_data_input[self.cgi_file_fields_required[2]]
+                        sd_input_row[self.SD_fields_need_to_update[3]] = matching_cgi_data_input[self.cgi_file_fields_required[3]]
+                        sd_input_row[self.SD_fields_need_to_update[4]] = matching_cgi_data_input[self.cgi_file_fields_required[4]]
+                        sd_input_row[self.SD_fields_need_to_update[5]] = matching_cgi_data_input[self.cgi_file_fields_required[5]]
+                        sd_input_row[self.SD_fields_need_to_update[6]] = matching_cgi_data_input[self.cgi_file_fields_required[6]]
+                        sd_input_row[self.SD_fields_need_to_update[7]] = matching_cgi_data_input[self.cgi_file_fields_required[7]]
+                        sd_input_row[self.SD_fields_need_to_update[8]] = matching_cgi_data_input[self.cgi_file_fields_required[8]]
                         # 9th field is antenna-model, 10th field was a late requirement so remain un-arranged
-                        active_status = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[12]]
+                        active_status = matching_cgi_data_input[self.cgi_file_fields_required[12]]
                         if active_status.upper() == 'ACTIVE':
-                            sd_input_row[self.data_reader_ob.SD_fields_need_to_update[10]] = 'true'
+                            sd_input_row[self.SD_fields_need_to_update[10]] = 'true'
                         else:
-                            sd_input_row[self.data_reader_ob.SD_fields_need_to_update[10]] = 'false'
-
+                            sd_input_row[self.SD_fields_need_to_update[10]] = 'false'
                         print("matching_cgi_row = {}".format(matching_cgi_data_input))
                         # print("antenna-model field name from cgi_required_fields = {}".format(self.data_reader_ob.cgi_file_fields_required[9]))
-                        antenna_model = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[9]]
-                        antenna_e_tilt = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[10]]
-                        band: int = matching_cgi_data_input[self.data_reader_ob.cgi_file_fields_required[11]]
+                        antenna_model = matching_cgi_data_input[self.cgi_file_fields_required[9]]
+                        antenna_e_tilt = matching_cgi_data_input[self.cgi_file_fields_required[10]]
+                        band: int = matching_cgi_data_input[self.cgi_file_fields_required[11]]
                         antenna_model_antenna_e_tilt_key = "{}/{}/{}".format(antenna_model, antenna_e_tilt, band)
-
                         try:
                             antenna_model_profile = antenna_model_vs_profile_map[antenna_model_antenna_e_tilt_key]
                         except KeyError:
@@ -120,14 +151,12 @@ class DataProcessor(FileReader):
                             report_line = "RNC-Sector\t{0}\tthere is a match in GSI file, but corresponding ##ANTENNA-MODEL/E-Tilt/BAND## \t{1}\thas no mathng profile file under profile root,".format(
                                 sd_rnc_sector_key, antenna_model_antenna_e_tilt_key)
                             report[sd_rnc_sector_key].append(report_line)
-
                             self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
-
                             # print(report)
                             sd_ob_out[n] = sd_input_row
                             n += 1
                         else:
-                            sd_input_row[self.data_reader_ob.SD_fields_need_to_update[9]] = antenna_model_profile
+                            sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
                             sd_ob_out[n] = sd_input_row
                             n += 1
                             self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
@@ -136,23 +165,25 @@ class DataProcessor(FileReader):
             else:
                 # Now I have corresponding records from planner and SD, they are OrderDict object
                 planner_input_row = matching_planner_input
+                # TODO update the input row's required fields by planner file's corresponding row
+                # TODO def update_input_row_by_planner()
                 # print(type(planner_input_row))
                 # print("planner_input_row = {}".format(planner_input_row))
                 # print(type(sd_input_row))
                 # print("sd_input_row = {}".fFor RNC-Sectorormat(sd_input_row))
                 # print("*********************")
-                sd_input_row[self.data_reader_ob.SD_fields_need_to_update[2]] = planner_input_row[self.data_reader_ob.planner_fields_required[2]]
-                sd_input_row[self.data_reader_ob.SD_fields_need_to_update[3]] = planner_input_row[self.data_reader_ob.planner_fields_required[3]]
-                sd_input_row[self.data_reader_ob.SD_fields_need_to_update[4]] = planner_input_row[self.data_reader_ob.planner_fields_required[4]]
-                sd_input_row[self.data_reader_ob.SD_fields_need_to_update[5]] = planner_input_row[self.data_reader_ob.planner_fields_required[5]]
-                sd_input_row[self.data_reader_ob.SD_fields_need_to_update[6]] = planner_input_row[self.data_reader_ob.planner_fields_required[6]]
-                sd_input_row[self.data_reader_ob.SD_fields_need_to_update[7]] = planner_input_row[self.data_reader_ob.planner_fields_required[7]]
-                sd_input_row[self.data_reader_ob.SD_fields_need_to_update[8]] = planner_input_row[self.data_reader_ob.planner_fields_required[8]]
+                sd_input_row[self.SD_fields_need_to_update[2]] = planner_input_row[self.planner_fields_required[2]]
+                sd_input_row[self.SD_fields_need_to_update[3]] = planner_input_row[self.planner_fields_required[3]]
+                sd_input_row[self.SD_fields_need_to_update[4]] = planner_input_row[self.planner_fields_required[4]]
+                sd_input_row[self.SD_fields_need_to_update[5]] = planner_input_row[self.planner_fields_required[5]]
+                sd_input_row[self.SD_fields_need_to_update[6]] = planner_input_row[self.planner_fields_required[6]]
+                sd_input_row[self.SD_fields_need_to_update[7]] = planner_input_row[self.planner_fields_required[7]]
+                sd_input_row[self.SD_fields_need_to_update[8]] = planner_input_row[self.planner_fields_required[8]]
                 # print("sd_input_row_updated = {}".format(sd_input_row))
                 # We populate antenna/profile at antenna-Model field
-                antenna_model = planner_input_row[self.data_reader_ob.planner_fields_required[9]]
-                antenna_e_tilt = planner_input_row[self.data_reader_ob.planner_fields_required[10]]
-                band = planner_input_row[self.data_reader_ob.planner_fields_required[11]]
+                antenna_model = planner_input_row[self.planner_fields_required[9]]
+                antenna_e_tilt = planner_input_row[self.planner_fields_required[10]]
+                band = planner_input_row[self.planner_fields_required[11]]
                 antenna_model_antenna_e_tilt_key = "{}/{}/{}".format(antenna_model, antenna_e_tilt, band)
                 try:
                     antenna_model_profile = antenna_model_vs_profile_map[antenna_model_antenna_e_tilt_key]
@@ -164,9 +195,7 @@ class DataProcessor(FileReader):
                     sd_input_row[self.data_reader_ob.SD_fields_need_to_update[9]] = antenna_model_profile
                     sd_ob_out[n] = sd_input_row
                     n += 1
-
                     self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
-
         return sd_ob_out, report
 
 
@@ -211,3 +240,5 @@ def write_report(report_dict: dict, out_put_file_p):
             else:
                 pass
             report_ob.write("{}\t{}\n".format(ind, line))
+
+
