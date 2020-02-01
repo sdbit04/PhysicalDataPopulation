@@ -12,10 +12,17 @@ except ImportError:
 
 class FileReader(object):
 
-    def __init__(self, technology: str, is_gis_planner=False, gis_type='airtel_kol'):
+    def __init__(self, technology: str,lte_carrier_path,sd_file_path,planner_file_path,cgi_file_path, planner_or_gis: str = "", gis_type='airtel_kol'):
+        self.lte_carrier_path = lte_carrier_path
+        self.cgi_file_path = cgi_file_path
+        self.planner_file_path = planner_file_path
+        self.sd_file_path = sd_file_path
         self.technology = technology
-        self.is_gis_planner = is_gis_planner
+        self.planner_or_gis = planner_or_gis
         self.gis_type = gis_type
+        print(self.technology)
+        print(self.planner_or_gis)
+        print(self.gis_type)
         if self.technology.upper() == 'UMTS':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Active']
@@ -26,7 +33,7 @@ class FileReader(object):
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude','Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth','Antenna  Model', 'Antenna Tilt-Electrical', 'Band','Status Active / Locked', 'Site Type']
             self.lte_carrier_fields_required = ['RNC', 'Sector Name']
-        elif self.technology.upper() == 'LTE' and self.is_gis_planner and self.gis_type == 'airtel-kol':
+        elif self.technology.upper() == 'LTE' and self.planner_or_gis == "" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
@@ -34,8 +41,8 @@ class FileReader(object):
             self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth', 'Antenna  Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Site Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.planner_fields_required = ['TAC id', 'eNodeB Name', 'eNodeB Longitude', 'eNodeB Latitude', 'Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
-        elif self.technology.upper() == 'LTE' and not self.is_gis_planner:
+            self.planner_fields_required = ['TAC', 'eNodeB Name', 'eNodeB Longitude', 'eNodeB Latitude', 'Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
+        elif self.technology.upper() == 'LTE' and self.planner_or_gis == 'NG':
             # This time look-up depends on only standard planner file, no GIS file will be used
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active']
@@ -118,24 +125,24 @@ class FileReader(object):
                     planner_dict_out[rnc_id_sector_key] = row
                 return planner_dict_out
 
-    def read_sd_antennas_file(self, sd_file_path):
-        if self.__validate_fields(sd_file_path):
-            sd_dict_out = self.__read_csv_sd(sd_file_path)
+    def read_sd_antennas_file(self):
+        if self.__validate_fields(self.sd_file_path):
+            sd_dict_out = self.__read_csv_sd(self.sd_file_path)
             return sd_dict_out
         else:
             raise NotImplementedError("SD input file was not valid, should be in tab separated csv file")
 
-    def read_planner_file(self, planner_file_path):
-        if self.__validate_fields(planner_file_path):
-            planner_dict_out = self.__read_csv_planner(planner_file_path)
+    def read_planner_file(self):
+        if self.__validate_fields(self.planner_file_path):
+            planner_dict_out = self.__read_csv_planner(self.planner_file_path)
             return planner_dict_out
         else:
             raise NotImplementedError("Planner Input file was not valid, should be in tab separated csv file")
 
-    def read_lte_carrier(self, lte_carrier_path):
+    def read_lte_carrier(self):
         lte_carrier_dict_out = {}
         try:
-            with open(lte_carrier_path, 'r') as lte_carrier_ob:
+            with open(self.lte_carrier_path, 'r') as lte_carrier_ob:
                 lte_carrier_dict = csv.DictReader(lte_carrier_ob, delimiter='\t')
                 # print(lte_carrier_dict.__next__())
                 for row in lte_carrier_dict:
@@ -147,8 +154,8 @@ class FileReader(object):
         except:
             raise Exception("Lte_carrier file was not readable")
 
-    def read_gsi_file(self, cgi_file_path):
-        file_path = cgi_file_path
+    def read_gsi_file(self):
+        file_path = self.cgi_file_path
         col_name_position = {}
         data_dict = {}
         with open_workbook(file_path) as GSI_file:

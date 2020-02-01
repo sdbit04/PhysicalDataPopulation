@@ -5,14 +5,60 @@ import datetime
 
 class DataProcessor(FileReader):
 
-    def __init__(self, technology: str, is_gis_planner=False, gis_type='airtel_kol'):
+    def __init__(self, technology: str, lte_carrier_path, sd_file_path,planner_file_path,cgi_file_path, planner_or_gis: str = "", gis_type='airtel_kol'):
         # I am creating only one type  of DataReader object considering we support only csv now,
         # also we have only one type param input_type
-        super().__init__(technology, is_gis_planner, gis_type)
+        super().__init__(technology,lte_carrier_path, sd_file_path,planner_file_path,cgi_file_path, planner_or_gis, gis_type)
         # We can have another data reader object if planner and SD are of different type
         # self.data_planner_object = self.data_reader_ob.read_planner_file()
 
-    def populate_sd_input_row_by_cgi(self, sd_input_row, matching_cgi_row, sd_rnc_sector_key, report):
+    def search_at_lte_carrier_and_cgi_file(self, sd_input_row, lte_carrier_ob,sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report ):
+        # Among the input only n is a immutable object, we need to return the new object referred by n
+        try:
+            lte_carrier_input = lte_carrier_ob[sd_rnc_sector_key]
+            print("Key {} was FOUND into lte_carrier".format(sd_rnc_sector_key))
+            # Assuming:  MCC, MNC and Sector-carrier-name should be there in lte-carrier's each record
+            mcc = lte_carrier_input['MCC']
+            mnc = lte_carrier_input['MNC']
+            sector_carrier_name = lte_carrier_input['Sector Carrier Name']
+            mcc_mnc_sector_carrier_key = self.get_mcc_mnc_sector_carrier_key(sector_carrier_name, mcc, mnc)
+        except KeyError:
+            print("Key {} not even found into lte_carrier, so not updating physical data for this sector".format(
+                sd_rnc_sector_key))
+            report_line = "RNC-Sector\t{0}\thas No match in 1st-level-planner and not even in lte_carrier file".format(
+                sd_rnc_sector_key)
+            report[sd_rnc_sector_key].append(report_line)
+            report_line = "RNC-Sector\t{0}\thas missing fields = NodeB Longitude, NodeB Latitude,Antenna Longitude, Antenna Latitude, Height, Mechanical DownTilt, Azimuth, Antenna Model".format(
+                sd_rnc_sector_key)
+            report[sd_rnc_sector_key].append(report_line)
+            # TODO populate_sd_row_by_blank()
+            self.update_input_row_by_blank(sd_input_row)  # This method modify directly the object sd_input_row
+            sd_ob_out[n] = sd_input_row
+            n += 1
+        else:
+            print("Key {} was FOUND into lte_carrier".format(sd_rnc_sector_key))
+            print("Key for next level CGI file lookup is {}".format(mcc_mnc_sector_carrier_key))
+            try:
+                matching_cgi_data_input = gsi_file_ob[mcc_mnc_sector_carrier_key]
+            except KeyError:
+                print("Key {} was not found into CGI file".format(mcc_mnc_sector_carrier_key))
+                report_line = "RNC-Sector\t{0}\tthere was match in lte_carrier, but corresponding ##MCC-MNC-SECTOR_CARRIER## key\t{1}\tnot in GIS file,".format(
+                    sd_rnc_sector_key, mcc_mnc_sector_carrier_key)
+                report[sd_rnc_sector_key].append(report_line)
+                self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
+                self.update_input_row_by_blank(sd_input_row)
+                sd_ob_out[n] = sd_input_row
+                n += 1
+            else:
+                print("Key {} was FOUND into CGI file, and matching_cgi_data_input is {}".format(
+                    mcc_mnc_sector_carrier_key, matching_cgi_data_input))
+                self.update_input_row_by_cgi(sd_input_row, matching_cgi_data_input, sd_rnc_sector_key, report)
+                sd_ob_out[n] = sd_input_row
+                n += 1
+                self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
+        return n
+
+    def update_input_row_by_cgi(self, sd_input_row, matching_cgi_row, sd_rnc_sector_key, report):
         print("matching_cgi_row = {}".format(matching_cgi_row))
         # print("antenna-model field name from cgi_required_fields = {}".format(self.data_reader_ob.cgi_file_fields_required[9]))
         sd_input_row[self.SD_fields_need_to_update[2]] = matching_cgi_row[self.cgi_file_fields_required[2]]
@@ -67,7 +113,7 @@ class DataProcessor(FileReader):
         else:
             sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
 
-    def populate_sd_row_by_blank(self, sd_input_row: dict):  # This method modify directly the object, sd_input_row
+    def update_input_row_by_blank(self, sd_input_row: dict):  # This method modify directly the object, sd_input_row
         sd_input_row[self.SD_fields_need_to_update[2]] = None   # 'NodeB Longitude'
         sd_input_row[self.SD_fields_need_to_update[3]] = None   # 'NodeB Latitude'
         sd_input_row[self.SD_fields_need_to_update[4]] = None   # 'Antenna Longitude'
@@ -75,7 +121,7 @@ class DataProcessor(FileReader):
         sd_input_row[self.SD_fields_need_to_update[6]] = None   # 'Height'
         sd_input_row[self.SD_fields_need_to_update[7]] = None   # 'Mechanical DownTilt'
         sd_input_row[self.SD_fields_need_to_update[8]] = None   # 'Azimuth'
-        sd_input_row[self.SD_fields_need_to_update[9]] = None   # 'Antenna Model'
+        sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'   # 'Antenna Model'
         sd_input_row[self.SD_fields_need_to_update[10]] = None  # 'Active'
 
     @staticmethod
@@ -113,86 +159,59 @@ class DataProcessor(FileReader):
                 sd_rnc_sector_key, missing_attributes)
             report_dict[sd_rnc_sector_key].append(report_line)
 
-    def update_sd_by_planner_step1(self, input_planner_file_path, input_sd_file_path, input_lte_carrier_path, input_sgi_file_path, profile_root_path_p):
+    def update_sd_by_planner_step1(self, profile_root_path_p):
+        # TODO if self.planner_file_path or self.cgi_file_path are not provided then need to change some logic to be handled
         sd_ob_out = {}
         report = {}
         n = 0
-        planner_object = self.read_planner_file(input_planner_file_path)
-        sd_object = self.read_sd_antennas_file(input_sd_file_path)
-        lte_carrier_ob = self.read_lte_carrier(input_lte_carrier_path)
-        sgi_file_ob = self.read_gsi_file(input_sgi_file_path)
+        # self.planner_or_gis
+        if self.planner_or_gis != 'NP' or self.planner_or_gis != 'NPNG':
+            planner_object = self.read_planner_file()
+        else:
+            planner_object = None
+
+        if self.planner_or_gis != 'NG' or self.planner_or_gis != 'NPNG':
+            gsi_file_ob = self.read_gsi_file()
+        else:
+            gsi_file_ob = None
+        sd_object = self.read_sd_antennas_file()
+        lte_carrier_ob = self.read_lte_carrier()
         # Here the planner_object and sd_object are dictionary
         _profile_root_path = profile_root_path_p
         _profile_reader = ProfileReader(_profile_root_path)
         _antenna_model_vs_profile_map = _profile_reader.create_antenna_model_vs_profile_map()
-        print("_antenna_model_vs_profile_map from profile directory")
-        print(_antenna_model_vs_profile_map)
+        print("_antenna_model_vs_profile_map from profile directory:- \n {}".format(_antenna_model_vs_profile_map))
         for sd_rnc_sector_key, sd_input_row in sd_object.items():
             report[sd_rnc_sector_key] = []
             # take a key from SD-ob
-            try:
-                # search for the key at planner-ob
-                matching_planner_input = planner_object[sd_rnc_sector_key]
-            except KeyError:
-                print("Key {} not found into Planner ".format(sd_rnc_sector_key))
-                report_line = "RNC-Sector\t{0}\thas No match in 1st-level-planner file, process will look for lte_carrier, and GSI files".format(
-                    sd_rnc_sector_key)
-                report[sd_rnc_sector_key].append(report_line)
-                # TODO need to add lookup with lte_carrier and SGI-file
+            if planner_object is not None:
                 try:
-                    lte_carrier_input = lte_carrier_ob[sd_rnc_sector_key]
-                    print("Key {} was FOUND into lte_carrier".format(sd_rnc_sector_key))
-                    # Assuming:  MCC, MNC and Sector-carrier-name should be there in lte-carrier's each record
-                    mcc = lte_carrier_input['MCC']
-                    mnc = lte_carrier_input['MNC']
-                    sector_carrier_name = lte_carrier_input['Sector Carrier Name']
-                    mcc_mnc_sector_carrier_key = self.get_mcc_mnc_sector_carrier_key(sector_carrier_name, mcc, mnc)
-                except KeyError:
-                    print("Key {} not even found into lte_carrier, so not updating physical data for this sector".format(sd_rnc_sector_key))
-                    report_line = "RNC-Sector\t{0}\thas No match in 1st-level-planner and not even in lte_carrier file".format(sd_rnc_sector_key)
-                    report[sd_rnc_sector_key].append(report_line)
-                    report_line = "RNC-Sector\t{0}\thas missing fields = NodeB Longitude, NodeB Latitude,Antenna Longitude, Antenna Latitude, Height, Mechanical DownTilt, Azimuth, Antenna Model".format(sd_rnc_sector_key)
-                    report[sd_rnc_sector_key].append(report_line)
-                    # TODO populate_sd_row_by_blank()
-                    self.populate_sd_row_by_blank(sd_input_row)    # This method modify directly the object sd_input_row
+                    # search for the key at planner-ob
+                    matching_planner_input = planner_object[sd_rnc_sector_key]
+                    # Now I have corresponding records from planner and SD, they are OrderDict object
+                    planner_input_row = matching_planner_input
+                    self.update_input_row_by_planner(sd_input_row, planner_input_row, _antenna_model_vs_profile_map)
                     sd_ob_out[n] = sd_input_row
                     n += 1
-                else:
-                    print("Key {} was FOUND into lte_carrier".format(sd_rnc_sector_key))
-                    print("Key for next level CGI file lookup is {}".format(mcc_mnc_sector_carrier_key))
-                    try:
-                        matching_cgi_data_input = sgi_file_ob[mcc_mnc_sector_carrier_key]
-                    except KeyError:
-                        print("Key {} was not found into CGI file".format(mcc_mnc_sector_carrier_key))
-                        report_line = "RNC-Sector\t{0}\tthere was match in lte_carrier, but corresponding ##MCC-MNC-SECTOR_CARRIER## key\t{1}\tnot in GIS file,".format(
-                            sd_rnc_sector_key, mcc_mnc_sector_carrier_key)
-                        report[sd_rnc_sector_key].append(report_line)
-                        self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
-                        self.populate_sd_row_by_blank(sd_input_row)
-                        sd_ob_out[n] = sd_input_row
-                        n += 1
+                    self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
+                except KeyError:
+                    print("Key {} not found into Planner ".format(sd_rnc_sector_key))
+                    report_line = "RNC-Sector\t{0}\thas No match in 1st-level-planner file, process will look for lte_carrier, and GSI files".format(
+                        sd_rnc_sector_key)
+                    report[sd_rnc_sector_key].append(report_line)
+                    # TODO need to add lookup with lte_carrier and SGI-file
+                    if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
+                        n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report)
                     else:
-                        print("Key {} was FOUND into CGI file".format(mcc_mnc_sector_carrier_key))
-                        print("matching_cgi_data_input is {}".format(matching_cgi_data_input))
-                        # TODO populate_sd_input_row_by_cgi(sd_input_row, cgi_)
-                        self.populate_sd_input_row_by_cgi(sd_input_row, matching_cgi_data_input, sd_rnc_sector_key, report)
-                        sd_ob_out[n] = sd_input_row
-                        n += 1
-                        self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
+                        print("GSI file not provided, so looking for next entry into SD ")
+                        continue
             else:
-                # Now I have corresponding records from planner and SD, they are OrderDict object
-                planner_input_row = matching_planner_input
-                # TODO update the input row's required fields by planner file's corresponding row
-                # print(type(planner_input_row))
-                # print("planner_input_row = {}".format(planner_input_row))
-                # print(type(sd_input_row))
-                # print("sd_input_row = {}".fFor RNC-Sectorormat(sd_input_row))
-                # print("*********************")
-                # TODO def update_input_row_by_planner()  # It update the sd_input_row dict object itself
-                self.update_input_row_by_planner(sd_input_row, planner_input_row, _antenna_model_vs_profile_map)
-                sd_ob_out[n] = sd_input_row
-                n += 1
-                self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
+                if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
+                    n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key,
+                                                                gsi_file_ob, sd_ob_out, n, report)
+                else:
+                    print("No planner no GIS file provided ")
+                    break
         return sd_ob_out, report
 
 
