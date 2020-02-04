@@ -1,5 +1,6 @@
 include README.rst
 include requirements.txt
+include physical_data_population/config/sample_config.ini
 include physical_data_population/temp_artifact/from_compl_conf/git_file
 include physical_data_population/temp_artifact/planner/git_file
 include physical_data_population/pypi/pyxlsb-1.0.6-py2.py3-none-any.whl

@@ -172,6 +172,7 @@ class DataProcessor(FileReader):
 
         if self.planner_or_gis != 'NG' or self.planner_or_gis != 'NPNG':
             gsi_file_ob = self.read_gsi_file()
+            # print(gsi_file_ob)
         else:
             gsi_file_ob = None
         sd_object = self.read_sd_antennas_file()
@@ -229,7 +230,7 @@ def data_writer(temp_out_dict, out_put_file_p):
         print("The list of fields into the output antennas.txt file{}".format(out_csv_fields))
         output_file = "antennas{}.txt".format(str(datetime.datetime.utcnow()).split(' ')[0])
         out_put_file = os.path.join(out_put_file_p, output_file)
-        print("output file name is {}".format(out_put_file))
+        print("outpfield_valueut file name is {}".format(out_put_file))
         with open(out_put_file, 'w') as out_a:
             pass
 

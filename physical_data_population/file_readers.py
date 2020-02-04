@@ -51,6 +51,13 @@ class FileReader(object):
         else:
             raise ("{} technology is not supported ".format(self.technology))
 
+    def remove_all_except_number(self, lte_cgi_input):
+        lte_cgi_out = ''
+        for c in lte_cgi_input:
+            if c.isnumeric():
+                lte_cgi_out = lte_cgi_out + c
+        return lte_cgi_out
+
     def csv_from_excel(self, xlsx_file_path, csv_file_path):
         try:
             import xlrd
@@ -204,12 +211,19 @@ class FileReader(object):
                     # constant in count
                     cell = row[position]  # getting the cell using cell_position as an index of row, it is a constant
                     # time operation, output like -> Cell(r=1, c=3, v='EKOL0000KONG')
-                    if col_name == 'Band' and cell.v is not None:
+                    if col_name == self.cgi_file_fields_required[11] and cell.v is not None:  # Band should be replaced by index of cgi_fields
                         # print(int(cell.v))
                         col_name_data[col_name] = int(cell.v)
-                    elif col_name == "Antenna Tilt-Electrical" and cell.v is not None and cell.v != 'NA':
+                    elif col_name == self.cgi_file_fields_required[10] and cell.v is not None and cell.v != 'NA': # same as band
                         # print(cell.v)
                         col_name_data[col_name] = int(cell.v)
+                    elif col_name == self.cgi_file_fields_required[0] and cell.v is not None:
+                        print(col_name)
+                        lte_cgi = str(cell.v)
+                        print(lte_cgi)
+                        lte_cgi_striped = self.remove_all_except_number(lte_cgi)
+                        print("lte_cgi_stipped = {}".format(lte_cgi_striped))
+                        col_name_data[col_name] = lte_cgi_striped
                     else:
                         col_name_data[col_name] = cell.v
                 # Next line we are making the first field 'LTE_CGI' as key for each record
@@ -217,23 +231,23 @@ class FileReader(object):
         return data_dict
 
 
-if __name__ == "__main__":
-    CGI_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\4G GIS Data Kolkata.xlsb"
-    lte_carrier = \
-        "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\lte-carriers.txt"
-    planner_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\Planning_input_4G.txt"
-
-    reader = FileReader(technology='LTE', )
-    # lte_carrier_dict_out_r = reader.read_lte_carrier(lte_carrier_path=lte_carrier)
-    # print(lte_carrier_dict_out_r)
-    # for value in lte_carrier_dict_out_r.values():
-    #     temp_l1 = str(value['Sector Carrier Name']).split('-')
-    #     print('{0}-{1}-{2}-{3}'.format(value['MCC'], value['MNC'], temp_l1[1], temp_l1[2]))
-
-    cgi_file_dict = reader.read_gsi_file(CGI_file)
-    # with open("cgi_file.json", 'a') as cgi_out_ob:
-    #     print(cgi_file_dict, file=cgi_out_ob)
-    print(cgi_file_dict)
-    # planner_dict = reader.read_planner_file(planner_file)
-    # one_row  = planner_dict['1160-EOR_23TD20_PUR-51_B']
-    # print(one_row['Band'])
+# if __name__ == "__main__":
+#     CGI_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\4G GIS Data Kolkata.xlsb"
+#     lte_carrier = \
+#         "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\lte-carriers.txt"
+#     planner_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\Planning_input_4G.txt"
+#
+#     reader = FileReader(technology='LTE', )
+#     # lte_carrier_dict_out_r = reader.read_lte_carrier(lte_carrier_path=lte_carrier)
+#     # print(lte_carrier_dict_out_r)
+#     # for value in lte_carrier_dict_out_r.values():
+#     #     temp_l1 = str(value['Sector Carrier Name']).split('-')
+#     #     print('{0}-{1}-{2}-{3}'.format(value['MCC'], value['MNC'], temp_l1[1], temp_l1[2]))
+#
+#     cgi_file_dict = reader.read_gsi_file(CGI_file)
+#     # with open("cgi_file.json", 'a') as cgi_out_ob:
+#     #     print(cgi_file_dict, file=cgi_out_ob)
+#     print(cgi_file_dict)
+#     # planner_dict = reader.read_planner_file(planner_file)
+#     # one_row  = planner_dict['1160-EOR_23TD20_PUR-51_B']
+#     # print(one_row['Band'])

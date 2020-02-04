@@ -68,8 +68,8 @@ def read_configuration(config_path_p):
             return config_json_ob, planning_or_gis
 
 
-if __name__ == "__main__":
-    config_path = './config/config.ini'
-    config_json_ob, p_or_g = read_configuration(config_path)
-    print("plan_or_gis is {}".format(p_or_g))
+# if __name__ == "__main__":
+#     config_path = './config/config.ini'
+#     config_json_ob, p_or_g = read_configuration(config_path)
+#     print("plan_or_gis is {}".format(p_or_g))
 
