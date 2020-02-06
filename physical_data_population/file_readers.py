@@ -1,18 +1,11 @@
 import csv
-import time
-try:
-    from pyxlsb import open_workbook
-except ImportError:
-    print("pyxlsb not installed, so installing ")
-    # import pip
-    from pip._internal import main
-    main(['install', './pypi/pyxlsb-1.0.6-py2.py3-none-any.whl'])
-    from pyxlsb import open_workbook
+from pyxlsb import *
+import xlrd
 
 
 class FileReader(object):
 
-    def __init__(self, technology: str,lte_carrier_path,sd_file_path,planner_file_path,cgi_file_path, planner_or_gis: str = "", gis_type='airtel_kol'):
+    def __init__(self, technology: str, lte_carrier_path,sd_file_path,planner_file_path,cgi_file_path, planner_or_gis: str = "", gis_type='airtel_kol'):
         self.lte_carrier_path = lte_carrier_path
         self.cgi_file_path = cgi_file_path
         self.planner_file_path = planner_file_path
@@ -31,14 +24,15 @@ class FileReader(object):
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude','Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth','Antenna  Model', 'Antenna Tilt-Electrical', 'Band','Status Active / Locked', 'Site Type']
+            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude','Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth','Antenna  Model', 'Antenna Tilt-Electrical', 'Band','Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['RNC', 'Sector Name']
+            # Using object for this parameters
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == "" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active']
+            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth', 'Antenna  Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Site Type']
+            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth', 'Antenna  Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.planner_fields_required = ['TAC', 'eNodeB Name', 'eNodeB Longitude', 'eNodeB Latitude', 'Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
@@ -59,15 +53,6 @@ class FileReader(object):
         return lte_cgi_out
 
     def csv_from_excel(self, xlsx_file_path, csv_file_path):
-        try:
-            import xlrd
-            print("imported xlrd ")
-        except ModuleNotFoundError:
-            print("xlrd not installed, so installing")
-            # import pip
-            from pip._internal import main
-            main(['install', './pypi/xlrd-1.2.0-py2.py3-none-any.whl'])
-            import xlrd
         technology = self.technology
         wb = xlrd.open_workbook(xlsx_file_path)
         sh = wb.sheet_by_name(technology)
@@ -197,6 +182,8 @@ class FileReader(object):
                     col_name_position[cell.v] = cell.c
                 elif cell.v == self.cgi_file_fields_required[12]:
                     col_name_position[cell.v] = cell.c
+                elif str(cell.v).__contains__(self.cgi_file_fields_required[13]):
+                    col_name_position[self.cgi_file_fields_required[13]] = cell.c
                 else:
                     pass
             # Following statement will print the header with their column position as key:value pair
@@ -209,23 +196,23 @@ class FileReader(object):
 
                 for col_name, position in col_name_position.items():  # Seems a quadratic, but this iteration is
                     # constant in count
-                    cell = row[position]  # getting the cell using cell_position as an index of row, it is a constant
+                    cell_object = row[position]  # getting the cell using cell_position as an index of row, it is a constant
                     # time operation, output like -> Cell(r=1, c=3, v='EKOL0000KONG')
-                    if col_name == self.cgi_file_fields_required[11] and cell.v is not None:  # Band should be replaced by index of cgi_fields
+                    if col_name == self.cgi_file_fields_required[11] and cell_object.v is not None:  # Band should be replaced by index of cgi_fields
                         # print(int(cell.v))
-                        col_name_data[col_name] = int(cell.v)
-                    elif col_name == self.cgi_file_fields_required[10] and cell.v is not None and cell.v != 'NA': # same as band
+                        col_name_data[col_name] = int(cell_object.v)
+                    elif col_name == self.cgi_file_fields_required[10] and cell_object.v is not None and cell_object.v != 'NA': # same as band
                         # print(cell.v)
-                        col_name_data[col_name] = int(cell.v)
-                    elif col_name == self.cgi_file_fields_required[0] and cell.v is not None:
-                        print(col_name)
-                        lte_cgi = str(cell.v)
-                        print(lte_cgi)
+                        col_name_data[col_name] = int(cell_object.v)
+                    elif col_name == self.cgi_file_fields_required[0] and cell_object.v is not None:
+                        # print(col_name)
+                        lte_cgi = str(cell_object.v)
+                        # print(lte_cgi)
                         lte_cgi_striped = self.remove_all_except_number(lte_cgi)
-                        print("lte_cgi_stipped = {}".format(lte_cgi_striped))
+                        # print("lte_cgi_stipped = {}".format(lte_cgi_striped))
                         col_name_data[col_name] = lte_cgi_striped
                     else:
-                        col_name_data[col_name] = cell.v
+                        col_name_data[col_name] = cell_object.v
                 # Next line we are making the first field 'LTE_CGI' as key for each record
                 data_dict["{0}".format(col_name_data[self.cgi_file_fields_required[0]])] = col_name_data
         return data_dict

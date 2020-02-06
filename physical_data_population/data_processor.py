@@ -36,7 +36,6 @@ class DataProcessor(FileReader):
             sd_ob_out[n] = sd_input_row
             n += 1
         else:
-            print("Key {} was FOUND into lte_carrier".format(sd_rnc_sector_key))
             print("Key for next level CGI file lookup is {}".format(mcc_mnc_sector_carrier_key))
             try:
                 matching_cgi_data_input = gsi_file_ob[mcc_mnc_sector_carrier_key]
@@ -74,6 +73,12 @@ class DataProcessor(FileReader):
             sd_input_row[self.SD_fields_need_to_update[10]] = 'true'
         else:
             sd_input_row[self.SD_fields_need_to_update[10]] = 'false'
+        tower_type = matching_cgi_row[self.cgi_file_fields_required[13]]
+        if tower_type != 'IBS':
+            in_building = 'False'
+        else:
+            in_building = 'True'
+        sd_input_row[self.SD_fields_need_to_update[11]] = in_building
 
         antenna_model = matching_cgi_row[self.cgi_file_fields_required[9]]
         antenna_e_tilt = matching_cgi_row[self.cgi_file_fields_required[10]]
