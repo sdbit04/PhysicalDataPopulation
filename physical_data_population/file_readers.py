@@ -30,12 +30,13 @@ class FileReader(object):
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == "" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building']
+            self.planner_fields_required = ['RNC Id', 'eNodeB Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
             self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth', 'Antenna  Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.planner_fields_required = ['TAC', 'eNodeB Name', 'eNodeB Longitude', 'eNodeB Latitude', 'Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
+
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == 'NG':
             # This time look-up depends on only standard planner file, no GIS file will be used
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
@@ -45,12 +46,12 @@ class FileReader(object):
         else:
             raise ("{} technology is not supported ".format(self.technology))
 
-    def remove_all_except_number(self, lte_cgi_input):
-        lte_cgi_out = ''
-        for c in lte_cgi_input:
+    def remove_all_except_number(self, alphanumeric_input):
+        numeric_out = ''
+        for c in alphanumeric_input:
             if c.isnumeric():
-                lte_cgi_out = lte_cgi_out + c
-        return lte_cgi_out
+                numeric_out = numeric_out + c
+        return numeric_out
 
     def csv_from_excel(self, xlsx_file_path, csv_file_path):
         technology = self.technology
@@ -203,7 +204,8 @@ class FileReader(object):
                         col_name_data[col_name] = int(cell_object.v)
                     elif col_name == self.cgi_file_fields_required[10] and cell_object.v is not None and cell_object.v != 'NA': # same as band
                         # print(cell.v)
-                        col_name_data[col_name] = int(cell_object.v)
+                        band = self.remove_all_except_number(cell_object.v)
+                        col_name_data[col_name] = int(band)
                     elif col_name == self.cgi_file_fields_required[0] and cell_object.v is not None:
                         # print(col_name)
                         lte_cgi = str(cell_object.v)

@@ -82,8 +82,8 @@ class DataProcessor(FileReader):
 
         antenna_model = matching_cgi_row[self.cgi_file_fields_required[9]]
         antenna_e_tilt = matching_cgi_row[self.cgi_file_fields_required[10]]
-        band: int = matching_cgi_row[self.cgi_file_fields_required[11]]
-        antenna_model_antenna_e_tilt_key = "{}/{}/{}".format(antenna_model, antenna_e_tilt, band)
+        band: int = matching_cgi_row[self.cgi_file_fields_required[11]]  # only numbers are extracted from band by reader method
+        antenna_model_antenna_e_tilt_key = "{}{}{}".format(antenna_model, antenna_e_tilt, band)
         try:
             antenna_model_profile = matching_cgi_row[antenna_model_antenna_e_tilt_key]
         except KeyError:
@@ -108,8 +108,9 @@ class DataProcessor(FileReader):
         # We populate antenna/profile at antenna-Model field
         antenna_model = planner_input_row[self.planner_fields_required[9]]
         antenna_e_tilt = planner_input_row[self.planner_fields_required[10]]
-        band = planner_input_row[self.planner_fields_required[11]]
-        antenna_model_antenna_e_tilt_key = "{}/{}/{}".format(antenna_model, antenna_e_tilt, band)
+        alphanumeric_band = planner_input_row[self.planner_fields_required[11]]
+        band = self.remove_all_except_number(alphanumeric_band)
+        antenna_model_antenna_e_tilt_key = "{}{}{}".format(antenna_model, antenna_e_tilt, band)
         try:
             antenna_model_profile = _antenna_model_vs_profile_map_local[antenna_model_antenna_e_tilt_key]
         except KeyError:

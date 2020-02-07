@@ -48,13 +48,13 @@ class ProfileReader(object):
                 # TODO if model_dir contain omni then antenna_model_profile_combination will be like IBS/profile-name
                 if str(model_dir).upper().__contains__('OMNI'):
                     model_dir = 'IBS'
-                antenna_model_profile_combination = "{}/{}".format(model_dir, profile.rstrip(".txt"))
+                antenna_model_profile_combination = "{}{}".format(model_dir, profile.rstrip(".txt"))
                 # print(antenna_model_profile_combination)
                 profile_file_data_dict = self.read_profile(profile_path_abs)
                 # print(profile_file_data_dict)
                 band = self.get_band_for_a_frequency(float(profile_file_data_dict['FREQUENCY']))
-                ELECTRICAL_TILT_band = "{}/{}".format(profile_file_data_dict['ELECTRICAL_TILT'], band)
-                antenna_model_eTilt_combination = "{}/{}".format(model_dir, ELECTRICAL_TILT_band)
+                ELECTRICAL_TILT_band = "{}{}".format(profile_file_data_dict['ELECTRICAL_TILT'], band)
+                antenna_model_eTilt_combination = "{}{}".format(model_dir, ELECTRICAL_TILT_band)
                 # ELECTRICAL_TILT = "{}".format(profile_file_data_dict['ELECTRICAL_TILT'])
                 # antenna_model_eTilt_combination = "{}/{}".format(model_dir, ELECTRICAL_TILT)
                 try:
