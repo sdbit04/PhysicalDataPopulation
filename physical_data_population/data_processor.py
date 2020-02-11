@@ -12,12 +12,12 @@ class DataProcessor(FileReader):
         # We can have another data reader object if planner and SD are of different type
         # self.data_planner_object = self.data_reader_ob.read_planner_file()
 
-    def search_at_lte_carrier_and_cgi_file(self, sd_input_row, lte_carrier_ob,sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report ):
+    def search_at_lte_carrier_and_cgi_file(self, sd_input_row, lte_carrier_ob,sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map ):
         # Among the input only n is a immutable object, we need to return the new object referred by n
         try:
             lte_carrier_input = lte_carrier_ob[sd_rnc_sector_key]
             print("Key {} was FOUND into lte_carrier".format(sd_rnc_sector_key))
-            # Assuming:  MCC, MNC and Sector-carrier-name should be there in lte-carrier's each record
+            # Assuming:  MCC, MNC as FOUND into lte_carrierand Sector-carrier-name should be there in lte-carrier's each record
             mcc = lte_carrier_input['MCC']
             mnc = lte_carrier_input['MNC']
             sector_carrier_name = lte_carrier_input['Sector Carrier Name']
@@ -51,13 +51,22 @@ class DataProcessor(FileReader):
             else:
                 print("Key {} was FOUND into CGI file, and matching_cgi_data_input is {}".format(
                     mcc_mnc_sector_carrier_key, matching_cgi_data_input))
-                self.update_input_row_by_cgi(sd_input_row, matching_cgi_data_input, sd_rnc_sector_key, report)
+                self.update_input_row_by_cgi(sd_input_row, matching_cgi_data_input, sd_rnc_sector_key, report, _antenna_model_vs_profile_map)
                 sd_ob_out[n] = sd_input_row
                 n += 1
                 self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
         return n
 
-    def update_input_row_by_cgi(self, sd_input_row, matching_cgi_row, sd_rnc_sector_key, report):
+    def remove_special_char(self, input_string):
+        special_chars = "-_ /\\?:;"
+        input_string = input_string
+        out_string = ""
+        for c in input_string:
+            if c not in special_chars:
+                out_string += c
+        return out_string
+
+    def update_input_row_by_cgi(self, sd_input_row, matching_cgi_row, sd_rnc_sector_key, report, _antenna_model_vs_profile_map):
         print("matching_cgi_row = {}".format(matching_cgi_row))
         # print("antenna-model field name from cgi_required_fields = {}".format(self.data_reader_ob.cgi_file_fields_required[9]))
         sd_input_row[self.SD_fields_need_to_update[2]] = matching_cgi_row[self.cgi_file_fields_required[2]]
@@ -80,12 +89,13 @@ class DataProcessor(FileReader):
             in_building = 'True'
         sd_input_row[self.SD_fields_need_to_update[11]] = in_building
 
-        antenna_model = matching_cgi_row[self.cgi_file_fields_required[9]]
+        antenna_model = self.remove_special_char(matching_cgi_row[self.cgi_file_fields_required[9]])
         antenna_e_tilt = matching_cgi_row[self.cgi_file_fields_required[10]]
         band: int = matching_cgi_row[self.cgi_file_fields_required[11]]  # only numbers are extracted from band by reader method
-        antenna_model_antenna_e_tilt_key = "{}{}{}".format(antenna_model, antenna_e_tilt, band)
+        antenna_model_antenna_e_tilt_key = "{}-{}-{}".format(antenna_model, antenna_e_tilt, band)
         try:
-            antenna_model_profile = matching_cgi_row[antenna_model_antenna_e_tilt_key]
+            # TODO we get the antennas-profiles from profile map
+            antenna_model_profile = _antenna_model_vs_profile_map[antenna_model_antenna_e_tilt_key]
         except KeyError:
             sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
             print("Profile {} was not found into source of profiles files".format(antenna_model_antenna_e_tilt_key))
@@ -97,6 +107,7 @@ class DataProcessor(FileReader):
             sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
 
     def update_input_row_by_planner(self, sd_input_row, planner_input_row, _antenna_model_vs_profile_map_local):  # It will work on the row found on that occation.
+        print("Planner input row is : {}".format(planner_input_row))
         sd_input_row[self.SD_fields_need_to_update[2]] = planner_input_row[self.planner_fields_required[2]]
         sd_input_row[self.SD_fields_need_to_update[3]] = planner_input_row[self.planner_fields_required[3]]
         sd_input_row[self.SD_fields_need_to_update[4]] = planner_input_row[self.planner_fields_required[4]]
@@ -106,15 +117,16 @@ class DataProcessor(FileReader):
         sd_input_row[self.SD_fields_need_to_update[8]] = planner_input_row[self.planner_fields_required[8]]
         # print("sd_input_row_updated = {}".format(sd_input_row))
         # We populate antenna/profile at antenna-Model field
-        antenna_model = planner_input_row[self.planner_fields_required[9]]
+        antenna_model = self.remove_special_char(planner_input_row[self.planner_fields_required[9]])
         antenna_e_tilt = planner_input_row[self.planner_fields_required[10]]
         alphanumeric_band = planner_input_row[self.planner_fields_required[11]]
         band = self.remove_all_except_number(alphanumeric_band)
-        antenna_model_antenna_e_tilt_key = "{}{}{}".format(antenna_model, antenna_e_tilt, band)
+        print("Band is : {}".format(band))
+        antenna_model_antenna_e_tilt_key = "{}-{}-{}".format(antenna_model, antenna_e_tilt, band)
         try:
             antenna_model_profile = _antenna_model_vs_profile_map_local[antenna_model_antenna_e_tilt_key]
         except KeyError:
-            print("Profile {} was not found into source of profiles files".format(antenna_model_antenna_e_tilt_key))
+            print("Profile from planner {} was not found into source of profiles files".format(antenna_model_antenna_e_tilt_key))
             sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
         else:
             sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
@@ -196,6 +208,7 @@ class DataProcessor(FileReader):
                     # search for the key at planner-ob
                     matching_planner_input = planner_object[sd_rnc_sector_key]
                     # Now I have corresponding records from planner and SD, they are OrderDict object
+                    print("Match found for {} into planner ".format(sd_rnc_sector_key))
                     planner_input_row = matching_planner_input
                     self.update_input_row_by_planner(sd_input_row, planner_input_row, _antenna_model_vs_profile_map)
                     sd_ob_out[n] = sd_input_row
@@ -208,14 +221,14 @@ class DataProcessor(FileReader):
                     report[sd_rnc_sector_key].append(report_line)
                     # TODO need to add lookup with lte_carrier and SGI-file
                     if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
-                        n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report)
+                        n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map)
                     else:
                         print("GSI file not provided, so looking for next entry into SD ")
                         continue
             else:
                 if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
                     n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key,
-                                                                gsi_file_ob, sd_ob_out, n, report)
+                                                                gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map)
                 else:
                     print("No planner no GIS file provided ")
                     break
@@ -264,4 +277,7 @@ def write_report(report_dict: dict, out_put_file_p):
                 pass
             report_ob.write("{}\t{}\n".format(ind, line))
 
+
+if __name__ == "__main__":
+    print(DataProcessor.remove_special_char("asfddsaf_?;:werqwre_-/\?"))
 

@@ -16,18 +16,8 @@ class FileReader(object):
         print(self.technology)
         print(self.planner_or_gis)
         print(self.gis_type)
-        if self.technology.upper() == 'UMTS':
-            # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Active']
-            # TODO:Sometime 'Sector name' is populated as 'eNodeBname' in planner file. then the 2nd element
-            # in the below list will be changed
-            # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical']
-            # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude','Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth','Antenna  Model', 'Antenna Tilt-Electrical', 'Band','Status Active / Locked', 'Tower Type']
-            self.lte_carrier_fields_required = ['RNC', 'Sector Name']
-            # Using object for this parameters
-        elif self.technology.upper() == 'LTE' and self.planner_or_gis == "" and self.gis_type == 'airtel_kol':
+
+        if self.technology.upper() == 'LTE' and self.planner_or_gis == "" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building']
             self.planner_fields_required = ['RNC Id', 'eNodeB Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
@@ -36,13 +26,6 @@ class FileReader(object):
             self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth', 'Antenna  Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-
-        elif self.technology.upper() == 'LTE' and self.planner_or_gis == 'NG':
-            # This time look-up depends on only standard planner file, no GIS file will be used
-            # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active']
-            # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.planner_fields_required = ['TAC id', 'eNodeB Name', 'eNodeB Longitude', 'eNodeB Latitude', 'Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
         else:
             raise ("{} technology is not supported ".format(self.technology))
 
@@ -204,7 +187,7 @@ class FileReader(object):
                         col_name_data[col_name] = int(cell_object.v)
                     elif col_name == self.cgi_file_fields_required[10] and cell_object.v is not None and cell_object.v != 'NA': # same as band
                         # print(cell.v)
-                        band = self.remove_all_except_number(cell_object.v)
+                        band = self.remove_all_except_number(str(cell_object.v))
                         col_name_data[col_name] = int(band)
                     elif col_name == self.cgi_file_fields_required[0] and cell_object.v is not None:
                         # print(col_name)
