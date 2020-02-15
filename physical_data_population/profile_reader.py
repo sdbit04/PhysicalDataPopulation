@@ -142,13 +142,13 @@ class ProfileReader(object):
         return antenna_model_vs_profile_map
 
 
-# if __name__ == "__main__":
-#     profile_root_path = r'D:\D_drive_BACKUP\MENTOR\Airtel\collect\Airtel Production Antenna Model'
-#     profile_reader = ProfileReader(profile_root_path)
-#     profile_reader.create_antenna_model_vs_profile_map()
-#     antenna_model_vs_profile_map = profile_reader.create_antenna_model_vs_profile_map()
-#     print(antenna_model_vs_profile_map)
-#     # print(profile_reader.read_profile(r'C:\C_DriveData\Python\Developement\PhysicalDataPopulation\collect\Airtel Production Antenna Model\932DG65T2EKL\932DG65T2EKL_02DT_1810.txt'))
-#
+if __name__ == "__main__":
+    profile_root_path = r'D:\D_drive_BACKUP\MENTOR\Airtel\collect\Airtel Production Antenna Model'
+    profile_reader = ProfileReader(profile_root_path)
+    profile_reader.create_antenna_model_vs_profile_map()
+    antenna_model_vs_profile_map = profile_reader.create_antenna_model_vs_profile_map()
+    print(antenna_model_vs_profile_map)
+    # print(profile_reader.read_profile(r'C:\C_DriveData\Python\Developement\PhysicalDataPopulation\collect\Airtel Production Antenna Model\932DG65T2EKL\932DG65T2EKL_02DT_1810.txt'))
+
 
 
