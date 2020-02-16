@@ -1,11 +1,14 @@
 import os
 import time
+from physical_data_population.custom_logger import *
 
 
 class ProfileReader(object):
 
     def __init__(self, antenna_profile_directory):
         self.profile_root_path = antenna_profile_directory
+
+    logger = create_custom_logger(logging.INFO)
 
     def remove_special_char(self, input_string):
         input_string = input_string
@@ -27,22 +30,26 @@ class ProfileReader(object):
     def read_profile(self, profile_path_p):
         profile_dict = {}
         profile_path = profile_path_p
-        print("reading profile {} ".format(profile_path_p))
+        self.logger.info("reading profile {} ".format(profile_path_p))
+        # print("reading profile {} ".format(profile_path_p))
         with open(profile_path, 'r', newline='') as profile_ob:
             for line in profile_ob.readlines():
                 line = line.rstrip('\n').rstrip('\r')
                 line_item = line.split(' ')
-                print("Line_tems  is {}".format(line_item))
+                self.logger.info("Line_tems  is {}".format(line_item))
+                # print("Line_tems  is {}".format(line_item))
                 # print("{}".format(line_item[0]))
                 if line_item[0] == 'ELECTRICAL_TILT':
                     try:
                         profile_dict['ELECTRICAL_TILT'] = line_item[1]
                     except IndexError:
-                        print("No value for ELECTRICAL_TILT into profile {}".format(profile_path))
+                        self.logger.error("No value for ELECTRICAL_TILT into profile {}".format(profile_path))
+                        # print("No value for ELECTRICAL_TILT into profile {}".format(profile_path))
                 elif line_item[0] == 'COMMENTS':
                     try:
                         comments_items = line_item[1:]
-                        print("ETilt from Comment is {}".format(comments_items))
+                        self.logger.info("ETilt from Comment is {}".format(comments_items))
+                        # print("ETilt from Comment is {}".format(comments_items))
                         # TODO: extract ETILT from comments
                         _ET = ""
                         for item in comments_items:
@@ -54,15 +61,18 @@ class ProfileReader(object):
                             if 'DT' in child_item.upper():
                                 _ET = child_item
                         ELECTRICAL_TILT = self.remove_char(_ET)
-                        print("ETITL from comment is {}".format(ELECTRICAL_TILT))
+                        self.logger.info("ETITL from comment is {}".format(ELECTRICAL_TILT))
+                        # print("ETITL from comment is {}".format(ELECTRICAL_TILT))
                         profile_dict['ELECTRICAL_TILT'] = ELECTRICAL_TILT
                     except IndexError:
-                        print("No comment available for profile {}".format(profile_path))
+                        self.logger.error("No comment available for profile {}".format(profile_path))
+                        # print("No comment available for profile {}".format(profile_path))
                 if line_item[0] == 'FREQUENCY':
                     try:
                         profile_dict[line_item[0]] = line_item[1]
                     except IndexError:
-                        print(" No value for FREQUENCY into profile {}".format(profile_path))
+                        self.logger.error(" No value for FREQUENCY into profile {}".format(profile_path))
+                        # print(" No value for FREQUENCY into profile {}".format(profile_path))
                 if len(profile_dict.keys()) == 2:
                     break
             return profile_dict
@@ -85,7 +95,6 @@ class ProfileReader(object):
                     profile_dict['ELECTRICAL_TILT'] = self.remove_char(name_of_file_items[-2])
                     break
             return profile_dict
-
 
     def get_band_for_a_frequency(self, frequency):
         frequency_input = frequency
@@ -119,14 +128,16 @@ class ProfileReader(object):
                 antenna_model_profile_combination = "{}/{}".format(model_dir, profile.rstrip(".txt"))
                 # print(antenna_model_profile_combination)
                 profile_file_data_dict = self.read_profile(profile_path_abs)
-                print(profile_file_data_dict)
+                self.logger.info("{}".format(profile_file_data_dict))
+                # print(profile_file_data_dict)
                 try:
                 # print(profile_file_data_dict)
                     band = self.get_band_for_a_frequency(float(profile_file_data_dict['FREQUENCY']))
                     ELECTRICAL_TILT_band = "{}-{}".format(profile_file_data_dict['ELECTRICAL_TILT'], band)
                     antenna_model_eTilt_combination = "{}-{}".format(self.remove_special_char(model_dir), ELECTRICAL_TILT_band)
                 except (KeyError):
-                    print("Profile {} has incorrect format, ignoring".format(profile_path_abs))
+                    self.logger.error("Profile {} has incorrect format, ignoring".format(profile_path_abs))
+                    # print("Profile {} has incorrect format, ignoring".format(profile_path_abs))
                     continue
                 # ELECTRICAL_TILT = "{}".format(profile_file_data_dict['ELECTRICAL_TILT'])
                 # antenna_model_eTilt_combination = "{}/{}".format(model_dir, ELECTRICAL_TILT)
@@ -142,14 +153,11 @@ class ProfileReader(object):
         return antenna_model_vs_profile_map
 
 
-# if __name__ == "__main__":
-#     # profile_root_path = r'D:\D_drive_BACKUP\MENTOR\Airtel\collect\Airtel Production Antenna Model'
-#     profile_root_path = r'C:\C_DriveData\Python\Developement\PhysicalDataPopulation_15-Feb\collect\Airtel Production Antenna Model'
-#     profile_reader = ProfileReader(profile_root_path)
-#     profile_reader.create_antenna_model_vs_profile_map()
-#     antenna_model_vs_profile_map = profile_reader.create_antenna_model_vs_profile_map()
-#     print(antenna_model_vs_profile_map)
-#     # print(profile_reader.read_profile(r'C:\C_DriveData\Python\Developement\PhysicalDataPopulation\collect\Airtel Production Antenna Model\932DG65T2EKL\932DG65T2EKL_02DT_1810.txt'))
-#
-#
-#
+if __name__ == "__main__":
+    # profile_root_path = r'D:\D_drive_BACKUP\MENTOR\Airtel\collect\Airtel Production Antenna Model'
+    profile_root_path = r'C:\C_DriveData\Python\Developement\PhysicalDataPopulation_15-Feb\collect\Airtel Production Antenna Model'
+    profile_reader = ProfileReader(profile_root_path)
+    profile_reader.create_antenna_model_vs_profile_map()
+    antenna_model_vs_profile_map = profile_reader.create_antenna_model_vs_profile_map()
+    print(antenna_model_vs_profile_map)
+    # print(profile_reader.read_profile(r'C:\C_DriveData\Python\Developement\PhysicalDataPopulation\collect\Airtel Production Antenna Model\932DG65T2EKL\932DG65T2EKL_02DT_1810.txt'))
