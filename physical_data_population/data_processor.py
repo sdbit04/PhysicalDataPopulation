@@ -58,7 +58,7 @@ class DataProcessor(FileReader):
         return n
 
     def remove_special_char(self, input_string):
-        special_chars = "-_ /\\?:;"
+        special_chars = "-_ /\\?:;+~"
         input_string = input_string
         out_string = ""
         for c in input_string:
