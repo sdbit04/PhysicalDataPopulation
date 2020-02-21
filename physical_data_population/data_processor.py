@@ -12,7 +12,29 @@ class DataProcessor(FileReader):
         # We can have another data reader object if planner and SD are of different type
         # self.data_planner_object = self.data_reader_ob.read_planner_file()
 
-    def search_at_lte_carrier_and_cgi_file(self, sd_input_row, lte_carrier_ob,sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map ):
+    def get_profile_for_a_model_etilt_band_key(self, ant_model_e_tilt_band_key: str, _antenna_model_vs_profile_map: dict, tolerance: int ):
+        ant_model_etilt_band_key = ant_model_e_tilt_band_key
+        ant_model_key_items = ant_model_etilt_band_key.split("-")
+        model = ant_model_key_items[0]
+        etilt = int(ant_model_key_items[1])
+        band = ant_model_key_items[2]
+        try:
+            antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key]
+            return antenna_model_profile
+        except KeyError:
+            min_tilt = (etilt - tolerance)
+            if min_tilt < 0:
+                min_tilt = 0
+            max_tilt = (etilt + tolerance)
+            for tilt in range(min_tilt, max_tilt, 1):
+                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, band)
+                try:
+                    antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key_tolerance]
+                    return antenna_model_profile
+                except KeyError:
+                    continue
+
+    def search_at_lte_carrier_and_cgi_file(self, sd_input_row, lte_carrier_ob,sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map,e_tilt_tolerance ):
         # Among the input only n is a immutable object, we need to return the new object referred by n
         try:
             lte_carrier_input = lte_carrier_ob[sd_rnc_sector_key]
@@ -51,7 +73,7 @@ class DataProcessor(FileReader):
             else:
                 print("Key {} was FOUND into CGI file, and matching_cgi_data_input is {}".format(
                     mcc_mnc_sector_carrier_key, matching_cgi_data_input))
-                self.update_input_row_by_cgi(sd_input_row, matching_cgi_data_input, sd_rnc_sector_key, report, _antenna_model_vs_profile_map)
+                self.update_input_row_by_cgi(sd_input_row, matching_cgi_data_input, sd_rnc_sector_key, report, _antenna_model_vs_profile_map, e_tilt_tolerance)
                 sd_ob_out[n] = sd_input_row
                 n += 1
                 self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
@@ -66,7 +88,7 @@ class DataProcessor(FileReader):
                 out_string += c
         return out_string
 
-    def update_input_row_by_cgi(self, sd_input_row, matching_cgi_row, sd_rnc_sector_key, report, _antenna_model_vs_profile_map):
+    def update_input_row_by_cgi(self, sd_input_row, matching_cgi_row, sd_rnc_sector_key, report, _antenna_model_vs_profile_map, e_tilt_tolerance):
         print("matching_cgi_row = {}".format(matching_cgi_row))
         # print("antenna-model field name from cgi_required_fields = {}".format(self.data_reader_ob.cgi_file_fields_required[9]))
         sd_input_row[self.SD_fields_need_to_update[2]] = matching_cgi_row[self.cgi_file_fields_required[2]]
@@ -94,19 +116,23 @@ class DataProcessor(FileReader):
         band: int = matching_cgi_row[self.cgi_file_fields_required[11]]  # only numbers are extracted from band by reader method
         antenna_model_antenna_e_tilt_key = "{}-{}-{}".format(antenna_model, antenna_e_tilt, band)
         try:
-            # TODO we get the antennas-profiles from profile map
-            antenna_model_profile = _antenna_model_vs_profile_map[antenna_model_antenna_e_tilt_key]
-        except KeyError:
+            # TODO moderate the profile search with a tolerance of electrical tilt based on configuration
+            # antenna_model_profile = _antenna_model_vs_profile_map[antenna_model_antenna_e_tilt_key]
+            antenna_model_profile = self.get_profile_for_a_model_etilt_band_key(antenna_model_antenna_e_tilt_key, _antenna_model_vs_profile_map, tolerance=e_tilt_tolerance)
+            if antenna_model_profile is None:
+                sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
+                print("Profile {} was not found into source of profiles files".format(antenna_model_antenna_e_tilt_key))
+                report_line = "RNC-Sector\t{0}\tthere is a match in GSI file, but corresponding ##ANTENNA-MODEL/E-Tilt/BAND## \t{1}\thas no mathng profile file under profile root,".format(sd_rnc_sector_key, antenna_model_antenna_e_tilt_key)
+                report[sd_rnc_sector_key].append(report_line)
+                self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
+                # print(report)
+            else:
+                sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
+        except ValueError:
+            print("Ignoring exception while looking for a profile, updating by dummy/dummy")
             sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
-            print("Profile {} was not found into source of profiles files".format(antenna_model_antenna_e_tilt_key))
-            report_line = "RNC-Sector\t{0}\tthere is a match in GSI file, but corresponding ##ANTENNA-MODEL/E-Tilt/BAND## \t{1}\thas no mathng profile file under profile root,".format(sd_rnc_sector_key, antenna_model_antenna_e_tilt_key)
-            report[sd_rnc_sector_key].append(report_line)
-            self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
-            # print(report)
-        else:
-            sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
 
-    def update_input_row_by_planner(self, sd_input_row, planner_input_row, _antenna_model_vs_profile_map_local):  # It will work on the row found on that occation.
+    def update_input_row_by_planner(self, sd_input_row, planner_input_row, _antenna_model_vs_profile_map_local, e_tilt_tolerance):  # It will work on the row found on that occation.
         print("Planner input row is : {}".format(planner_input_row))
         sd_input_row[self.SD_fields_need_to_update[2]] = planner_input_row[self.planner_fields_required[2]]
         sd_input_row[self.SD_fields_need_to_update[3]] = planner_input_row[self.planner_fields_required[3]]
@@ -124,12 +150,15 @@ class DataProcessor(FileReader):
         print("Band is : {}".format(band))
         antenna_model_antenna_e_tilt_key = "{}-{}-{}".format(antenna_model, antenna_e_tilt, band)
         try:
-            antenna_model_profile = _antenna_model_vs_profile_map_local[antenna_model_antenna_e_tilt_key]
-        except KeyError:
-            print("Profile from planner {} was not found into source of profiles files".format(antenna_model_antenna_e_tilt_key))
+            antenna_model_profile = self.get_profile_for_a_model_etilt_band_key(antenna_model_antenna_e_tilt_key, _antenna_model_vs_profile_map_local, tolerance=e_tilt_tolerance)
+            if antenna_model_profile is None:
+                print("Profile from planner {} was not found into source of profiles files".format(antenna_model_antenna_e_tilt_key))
+                sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
+            else:
+                sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
+        except ValueError:
+            print("Ignoring exception while looking for a profile, updating by dummy/dummy")
             sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
-        else:
-            sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
 
     def update_input_row_by_blank(self, sd_input_row: dict):  # This method modify directly the object, sd_input_row
         sd_input_row[self.SD_fields_need_to_update[2]] = None   # 'NodeB Longitude'
@@ -177,7 +206,7 @@ class DataProcessor(FileReader):
                 sd_rnc_sector_key, missing_attributes)
             report_dict[sd_rnc_sector_key].append(report_line)
 
-    def update_sd_by_planner_step1(self, profile_root_path_p):
+    def update_sd_by_planner_step1(self, profile_root_path_p, e_tilt_tolerance):
         # TODO if self.planner_file_path or self.cgi_file_path are not provided then need to change some logic to be handled
         sd_ob_out = {}
         report = {}
@@ -210,7 +239,7 @@ class DataProcessor(FileReader):
                     # Now I have corresponding records from planner and SD, they are OrderDict object
                     print("Match found for {} into planner ".format(sd_rnc_sector_key))
                     planner_input_row = matching_planner_input
-                    self.update_input_row_by_planner(sd_input_row, planner_input_row, _antenna_model_vs_profile_map)
+                    self.update_input_row_by_planner(sd_input_row, planner_input_row, _antenna_model_vs_profile_map, e_tilt_tolerance)
                     sd_ob_out[n] = sd_input_row
                     n += 1
                     self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
