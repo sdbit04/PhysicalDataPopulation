@@ -12,27 +12,31 @@ class DataProcessor(FileReader):
         # We can have another data reader object if planner and SD are of different type
         # self.data_planner_object = self.data_reader_ob.read_planner_file()
 
-    def get_profile_for_a_model_etilt_band_key(self, ant_model_e_tilt_band_key: str, _antenna_model_vs_profile_map: dict, tolerance: int ):
+    def get_profile_for_a_model_etilt_band_key(self, ant_model_e_tilt_band_key: str, _antenna_model_vs_profile_map: dict, tolerance: int):
         ant_model_etilt_band_key = ant_model_e_tilt_band_key
         ant_model_key_items = ant_model_etilt_band_key.split("-")
         model = ant_model_key_items[0]
         etilt = int(ant_model_key_items[1])
         band = ant_model_key_items[2]
+        tolerance = int(tolerance)
         try:
             antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key]
             return antenna_model_profile
         except KeyError:
-            min_tilt = (etilt - tolerance)
-            if min_tilt < 0:
-                min_tilt = 0
-            max_tilt = (etilt + tolerance)
-            for tilt in range(min_tilt, max_tilt, 1):
-                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, band)
-                try:
-                    antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key_tolerance]
-                    return antenna_model_profile
-                except KeyError:
-                    continue
+            if tolerance > 0:
+                min_tilt = (etilt - tolerance)
+                if min_tilt < 0:
+                    min_tilt = 0
+                max_tilt = (etilt + tolerance)
+                for tilt in range(min_tilt, max_tilt, 1):
+                    ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, band)
+                    try:
+                        antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key_tolerance]
+                        return antenna_model_profile
+                    except KeyError:
+                        continue
+            else:
+                return None
 
     def search_at_lte_carrier_and_cgi_file(self, sd_input_row, lte_carrier_ob,sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map,e_tilt_tolerance ):
         # Among the input only n is a immutable object, we need to return the new object referred by n
@@ -250,7 +254,7 @@ class DataProcessor(FileReader):
                     report[sd_rnc_sector_key].append(report_line)
                     # TODO need to add lookup with lte_carrier and SGI-file
                     if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
-                        n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map)
+                        n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map, e_tilt_tolerance=e_tilt_tolerance)
                     else:
                         print("GSI file not provided, so looking for next entry into SD ")
                         continue
