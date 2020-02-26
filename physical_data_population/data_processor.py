@@ -35,8 +35,100 @@ class DataProcessor(FileReader):
                         return antenna_model_profile
                     except KeyError:
                         continue
+                # If for loop is complete without break/return, i.e. there is no match found into the above loop
+                else:
+                    bands = ['900', '1800', '2100', '2300']
+                    band_position = bands.index(band)
+                    min_band_index = 0
+                    max_band_index = 3
+                    for tilt in range(min_tilt, max_tilt, 1):
+                        if band_position == min_band_index:
+                            for band_index1 in range(min_band_index + 1, max_band_index + 1, 1):
+                                print(bands[band_index1])
+                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, bands[band_index1])
+                                try:
+                                    antenna_model_profile = _antenna_model_vs_profile_map[
+                                        ant_model_etilt_band_key_tolerance]
+                                    return antenna_model_profile
+                                except KeyError:
+                                    continue
+
+                        elif band_position == max_band_index:
+                            for band_index2 in range(max_band_index - 1, min_band_index - 1, -1):
+                                print(bands[band_index2])
+                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, bands[band_index2])
+                                try:
+                                    antenna_model_profile = _antenna_model_vs_profile_map[
+                                        ant_model_etilt_band_key_tolerance]
+                                    return antenna_model_profile
+                                except KeyError:
+                                    continue
+                        else:
+                            for band_index3 in range(band_position + 1, max_band_index + 1, 1):
+                                print(bands[band_index3])
+                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, bands[band_index3])
+                                try:
+                                    antenna_model_profile = _antenna_model_vs_profile_map[
+                                        ant_model_etilt_band_key_tolerance]
+                                    return antenna_model_profile
+                                except KeyError:
+                                    continue
+
+                            for band_index4 in range(band_position - 1, min_band_index - 1, -1):
+                                print(bands[band_index4])
+                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, bands[band_index4])
+                                try:
+                                    antenna_model_profile = _antenna_model_vs_profile_map[
+                                        ant_model_etilt_band_key_tolerance]
+                                    return antenna_model_profile
+                                except KeyError:
+                                    continue
             else:
-                return None
+                bands = ['900', '1800', '2100', '2300']
+                band_position = bands.index(band)
+                min_band_index = 0
+                max_band_index = 3
+                if band_position == min_band_index:
+                    for band_index1 in range(min_band_index + 1, max_band_index + 1, 1):
+                            print(bands[band_index1])
+                            ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, bands[band_index1])
+                            try:
+                                antenna_model_profile = _antenna_model_vs_profile_map[
+                                    ant_model_etilt_band_key_tolerance]
+                                return antenna_model_profile
+                            except KeyError:
+                                continue
+
+                elif band_position == max_band_index:
+                    for band_index2 in range(max_band_index - 1, min_band_index - 1, -1):
+                            print(bands[band_index2])
+                            ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, bands[band_index2])
+                            try:
+                                antenna_model_profile = _antenna_model_vs_profile_map[
+                                    ant_model_etilt_band_key_tolerance]
+                                return antenna_model_profile
+                            except KeyError:
+                                continue
+                else:
+                    for band_index3 in range(band_position + 1, max_band_index + 1, 1):
+                            print(bands[band_index3])
+                            ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, bands[band_index3])
+                            try:
+                                antenna_model_profile = _antenna_model_vs_profile_map[
+                                    ant_model_etilt_band_key_tolerance]
+                                return antenna_model_profile
+                            except KeyError:
+                                continue
+
+                    for band_index4 in range(band_position - 1, min_band_index - 1, -1):
+                            print(bands[band_index4])
+                            ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, bands[band_index4])
+                            try:
+                                antenna_model_profile = _antenna_model_vs_profile_map[
+                                    ant_model_etilt_band_key_tolerance]
+                                return antenna_model_profile
+                            except KeyError:
+                                continue
 
     def search_at_lte_carrier_and_cgi_file(self, sd_input_row, lte_carrier_ob,sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map,e_tilt_tolerance ):
         # Among the input only n is a immutable object, we need to return the new object referred by n

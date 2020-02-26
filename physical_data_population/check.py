@@ -16,5 +16,28 @@ def check_return(n):
             continue
 
 
-print(check_return(70))
+band = '2100'
+bands = ['900', '1800', '2100', '2300']
+band_position = bands.index(band)
+min_band_index = 0
+max_band_index = 3
+
+print(band_position)
+
+if band_position == min_band_index:
+    for band_index1 in range(min_band_index+1, max_band_index+1, 1):
+        print(bands[band_index1])
+
+elif band_position == max_band_index:
+    for band_index2 in range(max_band_index-1, min_band_index-1, -1):
+        print(bands[band_index2])
+
+else:
+    for band_index3 in range(band_position+1, max_band_index+1, 1):
+        print(bands[band_index3])
+
+    for band_index4 in range(band_position-1, min_band_index-1, -1):
+        print(bands[band_index4])
+
+
 
