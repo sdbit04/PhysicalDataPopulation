@@ -28,6 +28,171 @@ class DataProcessor(FileReader):
                 if min_tilt < 0:
                     min_tilt = 0
                 max_tilt = (etilt + tolerance)
+                for change in range(1, tolerance+1, 1):
+                    up_tilt = etilt + change
+                    ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, up_tilt, band)
+                    try:
+                        antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key_tolerance]
+                        return antenna_model_profile
+                    except KeyError:
+                        down_tilt = etilt - change
+                        if down_tilt >= 0:
+                            ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, down_tilt, band)
+                            try:
+                                antenna_model_profile = _antenna_model_vs_profile_map[
+                                    ant_model_etilt_band_key_tolerance]
+                                return antenna_model_profile
+                            except KeyError:
+                                continue
+                # If for loop is complete without break/return, i.e. there is no match found into the above loop
+                else:
+                    bands = ['900', '1800', '2100', '2300']
+                    band_position = bands.index(band)
+                    min_band_index = 0
+                    max_band_index = 3
+                    for tilt in range(min_tilt, max_tilt, 1):
+                        # TODO next part can be a separate method
+                        # def get_profiles_using_adjacent_band()
+                        if band_position == min_band_index:
+                            for band_index1 in range(min_band_index + 1, max_band_index + 1, 1):
+                                print(bands[band_index1])
+                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, bands[band_index1])
+                                try:
+                                    antenna_model_profile = _antenna_model_vs_profile_map[
+                                        ant_model_etilt_band_key_tolerance]
+                                    return antenna_model_profile
+                                except KeyError:
+                                    continue
+                        elif band_position == max_band_index:
+                            for band_index2 in range(max_band_index - 1, min_band_index - 1, -1):
+                                print(bands[band_index2])
+                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, bands[band_index2])
+                                try:
+                                    antenna_model_profile = _antenna_model_vs_profile_map[
+                                        ant_model_etilt_band_key_tolerance]
+                                    return antenna_model_profile
+                                except KeyError:
+                                    continue
+                        else:
+                            count = 0
+                            while True:
+                                count += 1
+                                print(count)
+                                upper_index = band_position + count
+                                if upper_index <= max_band_index:
+                                    ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt,
+                                                                                           bands[upper_index])
+                                    try:
+                                        antenna_model_profile = _antenna_model_vs_profile_map[
+                                            ant_model_etilt_band_key_tolerance]
+                                        return antenna_model_profile
+                                    except KeyError:
+                                        lower_index = band_position - count
+                                        if lower_index >= min_band_index:
+                                            ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt,
+                                                                                                   bands[lower_index])
+                                            try:
+                                                antenna_model_profile = _antenna_model_vs_profile_map[
+                                                    ant_model_etilt_band_key_tolerance]
+                                                return antenna_model_profile
+                                            except KeyError:
+                                                continue
+                                        else:
+                                            return None
+                                else:
+                                    lower_index = band_position - count
+                                    if lower_index >= min_band_index:
+                                        ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt,
+                                                                                               bands[lower_index])
+                                        try:
+                                            antenna_model_profile = _antenna_model_vs_profile_map[
+                                                ant_model_etilt_band_key_tolerance]
+                                            return antenna_model_profile
+                                        except KeyError:
+                                            continue
+                                    else:
+                                        return None
+
+            else:
+                bands = ['900', '1800', '2100', '2300']
+                band_position = bands.index(band)
+                min_band_index = 0
+                max_band_index = 3
+                if band_position == min_band_index:
+                    for band_index1 in range(min_band_index + 1, max_band_index + 1, 1):
+                        print(bands[band_index1])
+                        ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, bands[band_index1])
+                        try:
+                            antenna_model_profile = _antenna_model_vs_profile_map[
+                                ant_model_etilt_band_key_tolerance]
+                            return antenna_model_profile
+                        except KeyError:
+                            continue
+                elif band_position == max_band_index:
+                    for band_index2 in range(max_band_index - 1, min_band_index - 1, -1):
+                        print(bands[band_index2])
+                        ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, bands[band_index2])
+                        try:
+                            antenna_model_profile = _antenna_model_vs_profile_map[
+                                ant_model_etilt_band_key_tolerance]
+                            return antenna_model_profile
+                        except KeyError:
+                            continue
+                else:
+                    count = 0
+                    while True:
+                        count += 1
+                        upper_index = band_position + count
+                        if upper_index <= max_band_index:
+                            ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt,
+                                                                                   bands[upper_index])
+                            try:
+                                antenna_model_profile = _antenna_model_vs_profile_map[
+                                    ant_model_etilt_band_key_tolerance]
+                                return antenna_model_profile
+                            except KeyError:
+                                lower_index = band_position - count
+                                if lower_index >= min_band_index:
+                                    ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt,
+                                                                                           bands[lower_index])
+                                    try:
+                                        antenna_model_profile = _antenna_model_vs_profile_map[
+                                            ant_model_etilt_band_key_tolerance]
+                                        return antenna_model_profile
+                                    except KeyError:
+                                        continue
+                                else:
+                                    return None
+                        else:
+                            lower_index = band_position - count
+                            if lower_index >= min_band_index:
+                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt,
+                                                                                       bands[lower_index])
+                                try:
+                                    antenna_model_profile = _antenna_model_vs_profile_map[
+                                        ant_model_etilt_band_key_tolerance]
+                                    return antenna_model_profile
+                                except KeyError:
+                                    continue
+                            else:
+                                return None
+
+    def get_profile_for_a_model_etilt_band_key_bk(self, ant_model_e_tilt_band_key: str, _antenna_model_vs_profile_map: dict, tolerance: int):
+        ant_model_etilt_band_key = ant_model_e_tilt_band_key
+        ant_model_key_items = ant_model_etilt_band_key.split("-")
+        model = ant_model_key_items[0]
+        etilt = int(ant_model_key_items[1])
+        band = ant_model_key_items[2]
+        tolerance = int(tolerance)
+        try:
+            antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key]
+            return antenna_model_profile
+        except KeyError:
+            if tolerance > 0:
+                min_tilt = (etilt - tolerance)
+                if min_tilt < 0:
+                    min_tilt = 0
+                max_tilt = (etilt + tolerance)
                 for tilt in range(min_tilt, max_tilt, 1):
                     ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, tilt, band)
                     try:
