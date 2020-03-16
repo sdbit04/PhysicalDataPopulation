@@ -37,7 +37,7 @@ def run_physical_data_population(config_path_p):
     else:
         planning_file = None
 
-
+    Tolerance_of_E_tilt = configuration_ob["Tolerance_of_E_tilt"]
     profile_root_path = configuration_ob["profile_root_path"]
     out_put_data_dict_dir = configuration_ob["out_put_data_dict_dir"]
     ###########################################################
@@ -62,7 +62,7 @@ def run_physical_data_population(config_path_p):
     """
     ###############################
     data_processor = DataProcessor(technology, lte_carrier_file, sd_path, planning_file, cgi_file, planner_or_gis=plan_gis, gis_type='airtel_kol')
-    out_put_data_dict, report_dict = data_processor.update_sd_by_planner_step1(profile_root_path_p=profile_root_path)
+    out_put_data_dict, report_dict = data_processor.update_sd_by_planner_step1(profile_root_path_p=profile_root_path, e_tilt_tolerance=Tolerance_of_E_tilt)
     # print(type(out_put_data_dict))
     # print(out_put_data_dict)
     data_writer(out_put_data_dict, out_put_data_dict_dir)
