@@ -5,7 +5,7 @@ import xlrd
 
 class FileReader(object):
 
-    def __init__(self, technology: str, lte_carrier_path,sd_file_path,planner_file_path,cgi_file_path, planner_or_gis: str = "", gis_type='airtel_kol'):
+    def __init__(self, technology: str, lte_carrier_path,sd_file_path,planner_file_path,cgi_file_path, competitive_model_path, planner_or_gis: str = "", gis_type='airtel_kol'):
         self.lte_carrier_path = lte_carrier_path
         self.cgi_file_path = cgi_file_path
         self.planner_file_path = planner_file_path
@@ -13,6 +13,7 @@ class FileReader(object):
         self.technology = technology
         self.planner_or_gis = planner_or_gis
         self.gis_type = gis_type
+        self.competitive_model_path = competitive_model_path
         print(self.technology)
         print(self.planner_or_gis)
         print(self.gis_type)
@@ -202,24 +203,38 @@ class FileReader(object):
                 data_dict["{0}".format(col_name_data[self.cgi_file_fields_required[0]])] = col_name_data
         return data_dict
 
+    def remove_special_char(self, input_string):
+        input_string = input_string
+        out_string = ""
+        special_char = "_-/ ?+~"
+        for c in input_string:
+            if c not in special_char:
+                out_string += c
+        return out_string
 
-# if __name__ == "__main__":
-#     CGI_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\4G GIS Data Kolkata.xlsb"
-#     lte_carrier = \
-#         "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\lte-carriers.txt"
-#     planner_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\Planning_input_4G.txt"
-#
-#     reader = FileReader(technology='LTE', )
-#     # lte_carrier_dict_out_r = reader.read_lte_carrier(lte_carrier_path=lte_carrier)
-#     # print(lte_carrier_dict_out_r)
-#     # for value in lte_carrier_dict_out_r.values():
-#     #     temp_l1 = str(value['Sector Carrier Name']).split('-')
-#     #     print('{0}-{1}-{2}-{3}'.format(value['MCC'], value['MNC'], temp_l1[1], temp_l1[2]))
-#
-#     cgi_file_dict = reader.read_gsi_file(CGI_file)
-#     # with open("cgi_file.json", 'a') as cgi_out_ob:
-#     #     print(cgi_file_dict, file=cgi_out_ob)
-#     print(cgi_file_dict)
-#     # planner_dict = reader.read_planner_file(planner_file)
-#     # one_row  = planner_dict['1160-EOR_23TD20_PUR-51_B']
-#     # print(one_row['Band'])
+    def read_competitive_model_list(self):
+        competitive_model_dist = {}
+        with open(self.competitive_model_path, 'r') as competitive_model_ob:
+            model_list = competitive_model_ob.readlines()
+            for line in model_list:
+                line = line.strip("\n")
+                line_items = line.split(":")
+                existing_model = self.remove_special_char(line_items[0])
+                comp_model = self.remove_special_char(line_items[1])
+                competitive_model_dist[existing_model] = comp_model
+        return competitive_model_dist
+
+
+if __name__ == "__main__":
+    CGI_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\4G GIS Data Kolkata.xlsb"
+    lte_carrier = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\lte-carriers.txt"
+    planner_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\Planning_input_4G.txt"
+    competitive_model = "D:\\D_drive_BACKUP\MENTOR\\Airtel\\For_Analysis\\Competitive_model\\competitive_profile.txt"
+    reader = FileReader(technology='LTE', lte_carrier_path=lte_carrier, sd_file_path=lte_carrier, planner_file_path=lte_carrier, cgi_file_path=CGI_file, competitive_model_path=competitive_model )
+    competitive_model_dict = reader.read_competitive_model_list()
+    print(competitive_model_dict)
+
+
+
+
+

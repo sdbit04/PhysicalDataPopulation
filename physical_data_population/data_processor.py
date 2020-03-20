@@ -5,13 +5,14 @@ import datetime
 
 class DataProcessor(FileReader):
 
-    def __init__(self, technology: str, lte_carrier_path, sd_file_path,planner_file_path,cgi_file_path, planner_or_gis: str = "", gis_type='airtel_kol'):
+    def __init__(self, technology: str, lte_carrier_path, sd_file_path,planner_file_path,cgi_file_path, competitive_model_path, planner_or_gis: str = "", gis_type='airtel_kol'):
         # I am creating only one type  of DataReader object considering we support only csv now,
         # also we have only one type param input_type
-        super().__init__(technology,lte_carrier_path, sd_file_path,planner_file_path,cgi_file_path, planner_or_gis, gis_type)
+        super().__init__(technology,lte_carrier_path, sd_file_path,planner_file_path,cgi_file_path, competitive_model_path, planner_or_gis, gis_type)
         # We can have another data reader object if planner and SD are of different type
         # self.data_planner_object = self.data_reader_ob.read_planner_file()
-        self.competitive_ant_model_dict = {"ODV065R17M18JJJGIN":"DBXLH6565BVTM","ODV05R17M18JJJGIN":"DBXLH6565BVTM","AANBmMIMOAAS64T64R":"DBXLH6565BVTM","AANBmMIMOAAS4T64R":"DBXLH6565BVTM","RV465DM":"DBXLH6565BVTM","AXCM824960171021706516.518iAD":"DBXLH6565BVTM"}
+        self.competitive_ant_model_dict = self.read_competitive_model_list()
+        # self.competitive_ant_model_dict = {"ODV065R17M18JJJGIN":"DBXLH6565BVTM","ODV05R17M18JJJGIN":"DBXLH6565BVTM","AANBmMIMOAAS64T64R":"DBXLH6565BVTM","AANBmMIMOAAS4T64R":"DBXLH6565BVTM","RV465DM":"DBXLH6565BVTM","AXCM824960171021706516.518iAD":"DBXLH6565BVTM"}
 
     def search_profile_for_each_change_in_tilt(self, base_tilt, tilt_change, _antenna_model_vs_profile_map, model, band):
         change = tilt_change
