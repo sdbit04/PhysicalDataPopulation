@@ -36,11 +36,17 @@ def run_physical_data_population(config_path_p):
         planning_file = configuration_ob["planning_file_csv"]
     else:
         planning_file = None
-
-    Tolerance_of_E_tilt = configuration_ob["Tolerance_of_E_tilt"]
+    try:
+        Tolerance_of_E_tilt = configuration_ob["Tolerance_of_E_tilt"]
+    except KeyError:
+        Tolerance_of_E_tilt = 0
     profile_root_path = configuration_ob["profile_root_path"]
     out_put_data_dict_dir = configuration_ob["out_put_data_dict_dir"]
-    competitive_model_path = configuration_ob["competitive_antenna_model"]
+    try:
+        competitive_model_path = configuration_ob["competitive_antenna_model"]
+    except KeyError:
+        competitive_model_path = None
+
     ###########################################################
     # Create antennas.txt and lte_carrier.txt from networks_base_dir, list_of_network_dir provided by user
     # list_of_network_dir may be already a list, need to convert into list.

@@ -214,15 +214,19 @@ class FileReader(object):
 
     def read_competitive_model_list(self):
         competitive_model_dist = {}
-        with open(self.competitive_model_path, 'r') as competitive_model_ob:
-            model_list = competitive_model_ob.readlines()
-            for line in model_list:
-                line = line.strip("\n")
-                line_items = line.split(":")
-                existing_model = self.remove_special_char(line_items[0])
-                comp_model = self.remove_special_char(line_items[1])
-                competitive_model_dist[existing_model] = comp_model
-        return competitive_model_dist
+        try:
+            with open(self.competitive_model_path, 'r') as competitive_model_ob:
+                model_list = competitive_model_ob.readlines()
+                for line in model_list:
+                    line = line.strip("\n")
+                    line_items = line.split(":")
+                    existing_model = self.remove_special_char(line_items[0])
+                    comp_model = self.remove_special_char(line_items[1])
+                    competitive_model_dist[existing_model] = comp_model
+        except TypeError:
+            return {}
+        else:
+            return competitive_model_dist
 
 
 if __name__ == "__main__":
