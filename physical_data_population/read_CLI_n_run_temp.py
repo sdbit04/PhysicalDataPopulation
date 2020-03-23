@@ -25,8 +25,8 @@ def run_physical_data_population(config_path_p):
     configuration_ob, plan_gis = read_configuration(__config_path)
     print("plan_or_gis={}".format(plan_gis))
     technology = configuration_ob["technology"]
-    networks_base_dir = configuration_ob["Network_directory_path"]
-    list_of_network_dir = configuration_ob["Directory_names_for_NE"].split(",")
+    # networks_base_dir = configuration_ob["Network_directory_path"]
+    # list_of_network_dir = configuration_ob["Directory_names_for_NE"].split(",")
     if plan_gis != 'NG' and plan_gis != 'NPNG':
         cgi_file = configuration_ob["GSI_file_xlsb"]
     else:

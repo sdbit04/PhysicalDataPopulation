@@ -226,7 +226,7 @@ class DataProcessor(FileReader):
 
         antenna_model = self.remove_special_char(matching_cgi_row[self.cgi_file_fields_required[9]])
         antenna_e_tilt = matching_cgi_row[self.cgi_file_fields_required[10]]
-        band: int = matching_cgi_row[self.cgi_file_fields_required[11]]  # only numbers are extracted from band by reader method
+        band: int = self.remove_special_char(matching_cgi_row[self.cgi_file_fields_required[11]]) # only numbers are extracted from band by reader method
         antenna_model_antenna_e_tilt_key = "{}-{}-{}".format(antenna_model, antenna_e_tilt, band)
         try:
             # TODO moderate the profile search with a tolerance of electrical tilt based on configuration
