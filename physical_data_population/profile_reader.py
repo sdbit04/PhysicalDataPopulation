@@ -1,4 +1,3 @@
-import os
 import time
 from physical_data_population.custom_logger import *
 
@@ -32,9 +31,9 @@ class ProfileReader(object):
         path = profile_path
         with open(path, 'r', newline="") as profile_1:
             collected_values = 0
-            Name_line = ""
-            Frequency_line = ""
-            E_tilt_line = ""
+            Name_line = None
+            Frequency_line = None
+            E_tilt_line = None
             for i in range(1, 15):
                 line = profile_1.readline().rstrip("\n")
                 if line.startswith("NAME"):
@@ -52,129 +51,52 @@ class ProfileReader(object):
                     E_tilt_line = line
                     collected_values += 1
                     continue
+            print("Total number of items collected from profile is {}".format(collected_values))
             print("Collected_values = {}".format(collected_values))
+            print("Name line from profile = {}".format(Name_line))
+            print("Frequency line from profile = {}".format(Frequency_line))
+            print("E_tilt_line from profile = {}".format(E_tilt_line))
 
-            if collected_values == 3:
-                # print(Name_line)
-                # print(Frequency_line)
-                # print(E_tilt_line)
-                print("We are good")
-                ANT_MODEL_ITEMS_OF_NAME = Name_line.split()[1:]
-                print("ANTENNA_MODEL_ITEMS:{}".format(ANT_MODEL_ITEMS_OF_NAME))
-                ANT_MODEL_ITEMS_STRING = ""
-                for item in ANT_MODEL_ITEMS_OF_NAME:
-                    ANT_MODEL_ITEMS_STRING += item
-                ANT_MODEL = ANT_MODEL_ITEMS_STRING.split("_")[0]
-                ANTENNA_MODEL = self.remove_special_char(ANT_MODEL)
-                FREQUENCY = Frequency_line.split()[1]
-                ELECTRICAL_TILT = E_tilt_line.split()[1]
-                print("FREQUENCY={} ELECTRICAL_TILT:{} ANTENNA_MODEL:{}".format(FREQUENCY, ELECTRICAL_TILT,ANTENNA_MODEL ))
-                profile_dict['FREQUENCY'] = FREQUENCY
-                profile_dict['ELECTRICAL_TILT'] = ELECTRICAL_TILT
-                profile_dict['ANTENNA_MODEL'] = ANTENNA_MODEL
-            else:
-                # print(Name_line)
-                # print(Frequency_line)
-                # print(E_tilt_line)
+            if E_tilt_line is None:
                 print("We need to find Electrical tilt from Name")
-                FREQUENCY = Frequency_line.split()[1]
-                E_TILT_ITEMS_OF_NAME = Name_line.split()[-1].split("_")
-                print("ELECTRICAL_TILT_ITEMS:{}".format(E_TILT_ITEMS_OF_NAME))
+                if Name_line is not None:
+                    E_TILT_ITEMS_OF_NAME = Name_line.split()[-1].split("_")
+                    print("ELECTRICAL_TILT_ITEMS:{}".format(E_TILT_ITEMS_OF_NAME))
+                    ELECTRICAL_TILT = ""
+                    for ITEM in E_TILT_ITEMS_OF_NAME:
+                        if "DT" in ITEM.upper():
+                            ELECTRICAL_TILT = ITEM
+                    ELECTRICAL_TILT = self.remove_char(ELECTRICAL_TILT)
+                else:
+                    print("Name line was not into profile ")
+                    ELECTRICAL_TILT = None
+            else:
+                ELECTRICAL_TILT = E_tilt_line.split()[1]
+
+            if Name_line is not None:
                 ANT_MODEL_ITEMS_OF_NAME = Name_line.split()[1:]
-                print("ANTENNA_MODEL_ITEMS:{}".format(ANT_MODEL_ITEMS_OF_NAME))
+                print("ANTENNA_MODEL_ITEMS_FROM_NAME:{}".format(ANT_MODEL_ITEMS_OF_NAME))
                 ANT_MODEL_ITEMS_STRING = ""
                 for item in ANT_MODEL_ITEMS_OF_NAME:
                     ANT_MODEL_ITEMS_STRING += item
+                print("ANT_MODEL_ITEMS_STRING = {}".format(ANT_MODEL_ITEMS_STRING))
                 ANT_MODEL = ANT_MODEL_ITEMS_STRING.split("_")[0]
                 ANTENNA_MODEL = self.remove_special_char(ANT_MODEL)
-                ELECTRICAL_TILT = ""
-                for ITEM in E_TILT_ITEMS_OF_NAME:
-                    if "DT" in ITEM.upper():
-                        ELECTRICAL_TILT = ITEM
-                ELECTRICAL_TILT = self.remove_char(ELECTRICAL_TILT)
-                print("FREQUENCY={} ELECTRICAL_TILT:{} ANTENNA_MODEL:{}".format(FREQUENCY, ELECTRICAL_TILT, ANTENNA_MODEL))
-                profile_dict['FREQUENCY'] = FREQUENCY
-                profile_dict['ELECTRICAL_TILT'] = ELECTRICAL_TILT
-                profile_dict['ANTENNA_MODEL'] = ANTENNA_MODEL
+            else:
+                print("Name line was not into profile ")
+                ANTENNA_MODEL = None
+
+            if Frequency_line is not None:
+                FREQUENCY = Frequency_line.split()[1]
+            else:
+                print("Frequency_line not into profile")
+                FREQUENCY = None
+
+            print("FREQUENCY={} ELECTRICAL_TILT:{} ANTENNA_MODEL:{}".format(FREQUENCY, ELECTRICAL_TILT, ANTENNA_MODEL))
+            profile_dict['FREQUENCY'] = FREQUENCY
+            profile_dict['ELECTRICAL_TILT'] = ELECTRICAL_TILT
+            profile_dict['ANTENNA_MODEL'] = ANTENNA_MODEL
         return profile_dict
-
-    def a_read_profile(self, profile_path_p):
-        profile_dict = {}
-        profile_path = profile_path_p
-        self.logger.info("reading profile {} ".format(profile_path_p))
-        # print("reading profile {} ".format(profile_path_p))
-        with open(profile_path, 'r', newline='') as profile_ob:
-            for line in profile_ob.readlines():
-                line = line.rstrip('\n').rstrip('\r')
-                line_item = line.split()
-                self.logger.info("Line_tems  is {}".format(line_item))
-                # print("Line_tems  is {}".format(line_item))
-                # print("{}".format(line_item[0]))
-                if line_item[0] == 'NAME':
-                    name_values = line_item[1:]
-                    name_value = ''
-                    for c in name_values:
-                        name_value += c
-                    model_name = name_value.split("_")[0]
-                    model_name = self.remove_special_char(model_name)
-
-                    profile_dict['ANTENNA_MODEL'] = model_name
-                if line_item[0] == 'ELECTRICAL_TILT':
-                    try:
-                        profile_dict['ELECTRICAL_TILT'] = line_item[1]
-                    except IndexError:
-                        self.logger.error("No value for ELECTRICAL_TILT into profile {}".format(profile_path))
-                        # print("No value for ELECTRICAL_TILT into profile {}".format(profile_path))
-                elif line_item[0] == 'COMMENTS':
-                    try:
-                        comments_items = line_item[1:]
-                        self.logger.info("ETilt from Comment is {}".format(comments_items))
-                        # print("ETilt from Comment is {}".format(comments_items))
-                        # TODO: extract ETILT from comments
-                        _ET = ""
-                        for item in comments_items:
-                            if 'DT' in item.upper():
-                                _ET = item
-                                break
-                        items_of_ET = _ET.split('_')
-                        for child_item in items_of_ET:
-                            if 'DT' in child_item.upper():
-                                _ET = child_item
-                        ELECTRICAL_TILT = self.remove_char(_ET)
-                        self.logger.info("ETITL from comment is {}".format(ELECTRICAL_TILT))
-                        # print("ETITL from comment is {}".format(ELECTRICAL_TILT))
-                        profile_dict['ELECTRICAL_TILT'] = ELECTRICAL_TILT
-                    except IndexError:
-                        self.logger.error("No comment available for profile {}".format(profile_path))
-                        # print("No comment available for profile {}".format(profile_path))
-                if line_item[0] == 'FREQUENCY':
-                    try:
-                        profile_dict[line_item[0]] = line_item[1]
-                    except IndexError:
-                        self.logger.error(" No value for FREQUENCY into profile {}".format(profile_path))
-                        # print(" No value for FREQUENCY into profile {}".format(profile_path))
-                if len(profile_dict.keys()) == 3:
-                    break
-            return profile_dict
-
-    def _read_profile(self, profile_path_p):
-        profile_dict = {}
-        profile_path = profile_path_p
-        time.sleep(0.1)
-        with open(profile_path, 'r', newline='') as profile_ob:
-            for line in profile_ob.readlines():
-                line_item = line.split(' ', maxsplit=1)
-                print("{}".format(line_item))
-                if line_item[0] == 'NAME':
-                    name_of_file = line_item[1].rstrip("\n").rstrip('\r')
-                    # print(name_of_file)
-                    profile_dict['NAME'] = name_of_file
-                    name_of_file_items = name_of_file.split("_")
-                    # print(name_of_file_items)
-                    profile_dict['FREQUENCY'] = name_of_file_items[-1]
-                    profile_dict['ELECTRICAL_TILT'] = self.remove_char(name_of_file_items[-2])
-                    break
-            return profile_dict
 
     def get_band_for_a_frequency(self, frequency):
         frequency_input = frequency

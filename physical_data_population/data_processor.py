@@ -18,14 +18,29 @@ class DataProcessor(FileReader):
         change = tilt_change
         etilt = base_tilt
         up_tilt = etilt + change
-        ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, up_tilt, band)
-        try:
-            antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key_tolerance]
-            return antenna_model_profile
-        except KeyError:
+        if up_tilt <= 10:
+            ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, up_tilt, band)
+            print("searching profile with {}".format(ant_model_etilt_band_key_tolerance))
+            try:
+                antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key_tolerance]
+                return antenna_model_profile
+            except KeyError:
+                down_tilt = etilt - change
+                if down_tilt >= 0:
+                    print("searching profile with {}".format(ant_model_etilt_band_key_tolerance))
+                    ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, down_tilt, band)
+                    try:
+                        antenna_model_profile = _antenna_model_vs_profile_map[
+                            ant_model_etilt_band_key_tolerance]
+                        return antenna_model_profile
+                    except KeyError:
+                        # TODO search with compatiable model, it is Not correct place
+                        pass
+        else:
             down_tilt = etilt - change
             if down_tilt >= 0:
                 ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, down_tilt, band)
+                print("searching profile with {}".format(ant_model_etilt_band_key_tolerance))
                 try:
                     antenna_model_profile = _antenna_model_vs_profile_map[
                         ant_model_etilt_band_key_tolerance]
@@ -37,20 +52,26 @@ class DataProcessor(FileReader):
     def get_profile_for_a_model_etilt_band_key(self, antenna_model, antenna_e_tilt, band, _antenna_model_vs_profile_map: dict, tolerance: int):
         model = antenna_model
         etilt = int(antenna_e_tilt)
-        band = band
+        band = str(band)
         ant_model_etilt_band_key = "{}-{}-{}".format(model, etilt, band)
+        print("ant_model_etilt_band_key = {}".format(ant_model_etilt_band_key))
         tolerance = int(tolerance)
+        print("Start searching profile with {}".format(ant_model_etilt_band_key))
         try:
             antenna_model_profile = _antenna_model_vs_profile_map[ant_model_etilt_band_key]
             return antenna_model_profile
         except KeyError:
+            print("No profile found with {}, trying with band and tilt tolarance".format(ant_model_etilt_band_key))
             # TODO def search_with_band_n_tilt_tolerance(tolerance)
             if tolerance > 0:
                 for change in range(1, tolerance+1, 1):
-                    self.search_profile_for_each_change_in_tilt(etilt, change, _antenna_model_vs_profile_map, model,band)
-                    continue
+                    antenna_model_profile = self.search_profile_for_each_change_in_tilt(etilt, change, _antenna_model_vs_profile_map, model,band)
+                    if antenna_model_profile is not None:
+                        print("Derived antenna-model-profile is = {}".format(antenna_model_profile))
+                        return antenna_model_profile
                 # If for loop is complete without break/return, i.e. there is no match found into the above loop
                 else:
+                    print("Not getting profile after tile tolerance, applying band tolerance with it")
                     # TODO def search_profile_for_different_band()
                     bands = ['900', '1800', '2100', '2300']
                     band_position = bands.index(band)
@@ -59,33 +80,50 @@ class DataProcessor(FileReader):
                     if band_position == min_band_index:
                         for band_index1 in range(min_band_index + 1, max_band_index + 1, 1):
                             current_band = bands[band_index1]
-                            print(current_band)
+                            # common part start
                             ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, current_band)
+                            print("searching with band: {}, and search key is: {}".format(current_band, ant_model_etilt_band_key_tolerance))
                             try:
                                 antenna_model_profile = _antenna_model_vs_profile_map[
                                     ant_model_etilt_band_key_tolerance]
                                 return antenna_model_profile
                             except KeyError:
+                                print("No profile found for key : {}, trying with tilt tolerance for band : {}".format(ant_model_etilt_band_key_tolerance, current_band))
                                 for change in range(1, tolerance + 1, 1):
-                                    self.search_profile_for_each_change_in_tilt(etilt, change,
-                                                                                _antenna_model_vs_profile_map, model,
-                                                                                current_band)
-                                    continue
+                                    antenna_model_profile = self.search_profile_for_each_change_in_tilt(etilt, change,
+                                                                                                        _antenna_model_vs_profile_map,
+                                                                                                        model, current_band)
+                                    if antenna_model_profile is not None:
+                                        print("Derived antenna-model-profile is = {}".format(antenna_model_profile))
+                                        return antenna_model_profile
+                                else:
+                                    print("No profile was found after changing band to {}".format(current_band))
+                            # common part end
                     elif band_position == max_band_index:
                         for band_index2 in range(max_band_index - 1, min_band_index - 1, -1):
                             current_band = bands[band_index2]
-                            print(current_band)
+                            # common part start
                             ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, current_band)
+                            print("searching with band: {}, and search key is: {}".format(current_band,
+                                                                                          ant_model_etilt_band_key_tolerance))
                             try:
                                 antenna_model_profile = _antenna_model_vs_profile_map[
                                     ant_model_etilt_band_key_tolerance]
                                 return antenna_model_profile
                             except KeyError:
+                                print("No profile found for key : {}, trying with tilt tolerance for band : {}".format(
+                                    ant_model_etilt_band_key_tolerance, current_band))
                                 for change in range(1, tolerance + 1, 1):
-                                    self.search_profile_for_each_change_in_tilt(etilt, change,
-                                                                                _antenna_model_vs_profile_map, model,
-                                                                                current_band)
-                                    continue
+                                    antenna_model_profile = self.search_profile_for_each_change_in_tilt(etilt, change,
+                                                                                                        _antenna_model_vs_profile_map,
+                                                                                                        model,
+                                                                                                        current_band)
+                                    if antenna_model_profile is not None:
+                                        print("Derived antenna-model-profile is = {}".format(antenna_model_profile))
+                                        return antenna_model_profile
+                                else:
+                                    print("No profile was found after changing band to {}".format(current_band))
+                            # common part end
                     else:
                         count = 0
                         while True:
@@ -93,36 +131,66 @@ class DataProcessor(FileReader):
                             upper_index = band_position + count
                             if upper_index <= max_band_index:
                                 upper_band = bands[upper_index]
-                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt,
-                                                                                       upper_band)
+                                current_band = upper_band
+                                # common part start
+                                ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, current_band)
+                                print("searching with band: {}, and search key is: {}".format(current_band,
+                                                                                              ant_model_etilt_band_key_tolerance))
                                 try:
                                     antenna_model_profile = _antenna_model_vs_profile_map[
                                         ant_model_etilt_band_key_tolerance]
                                     return antenna_model_profile
                                 except KeyError:
+                                    print(
+                                        "No profile found for key : {}, trying with tilt tolerance for band : {}".format(
+                                            ant_model_etilt_band_key_tolerance, current_band))
                                     for change in range(1, tolerance + 1, 1):
-                                        self.search_profile_for_each_change_in_tilt(etilt, change,
-                                                                                    _antenna_model_vs_profile_map,
-                                                                                    model,
-                                                                                    upper_band)
-                                        continue
+                                        antenna_model_profile = self.search_profile_for_each_change_in_tilt(etilt,
+                                                                                                            change,
+                                                                                                            _antenna_model_vs_profile_map,
+                                                                                                            model,
+                                                                                                            current_band)
+                                        if antenna_model_profile is not None:
+                                            print("Derived antenna-model-profile is = {}".format(antenna_model_profile))
+                                            return antenna_model_profile
                                     else:
+                                        print("No profile was found after changing band to {}".format(current_band))
+                                # common part end
+
                                         lower_index = band_position - count
                                         if lower_index >= min_band_index:
                                             lower_band = bands[lower_index]
+                                            current_band = lower_band
+                                            ####
+                                            # common part start
                                             ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt,
-                                                                                                   lower_band)
+                                                                                                   current_band)
+                                            print("searching with band: {}, and search key is: {}".format(current_band,
+                                                                                                          ant_model_etilt_band_key_tolerance))
                                             try:
                                                 antenna_model_profile = _antenna_model_vs_profile_map[
                                                     ant_model_etilt_band_key_tolerance]
                                                 return antenna_model_profile
                                             except KeyError:
+                                                print(
+                                                    "No profile found for key : {}, trying with tilt tolerance for band : {}".format(
+                                                        ant_model_etilt_band_key_tolerance, current_band))
                                                 for change in range(1, tolerance + 1, 1):
-                                                    self.search_profile_for_each_change_in_tilt(etilt, change,
-                                                                                                _antenna_model_vs_profile_map,
-                                                                                                model,
-                                                                                                lower_band)
-                                                    continue
+                                                    antenna_model_profile = self.search_profile_for_each_change_in_tilt(
+                                                        etilt,
+                                                        change,
+                                                        _antenna_model_vs_profile_map,
+                                                        model,
+                                                        current_band)
+                                                    if antenna_model_profile is not None:
+                                                        print("Derived antenna-model-profile is = {}".format(
+                                                            antenna_model_profile))
+                                                        return antenna_model_profile
+                                                else:
+                                                    print("No profile was found after changing band to {}".format(
+                                                        current_band))
+                                            # common part end
+
                                         else:
                                             continue
 
@@ -130,22 +198,38 @@ class DataProcessor(FileReader):
                                 lower_index = band_position - count
                                 if lower_index >= min_band_index:
                                     lower_band = bands[lower_index]
-                                    ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt,
-                                                                                           lower_band)
+                                    current_band = lower_band
+
+                                    # common part start
+                                    ant_model_etilt_band_key_tolerance = "{}-{}-{}".format(model, etilt, current_band)
+                                    print("searching with band: {}, and search key is: {}".format(current_band,
+                                                                                                  ant_model_etilt_band_key_tolerance))
                                     try:
                                         antenna_model_profile = _antenna_model_vs_profile_map[
                                             ant_model_etilt_band_key_tolerance]
                                         return antenna_model_profile
                                     except KeyError:
+                                        print(
+                                            "No profile found for key : {}, trying with tilt tolerance for band : {}".format(
+                                                ant_model_etilt_band_key_tolerance, current_band))
                                         for change in range(1, tolerance + 1, 1):
-                                            self.search_profile_for_each_change_in_tilt(etilt, change,
-                                                                                        _antenna_model_vs_profile_map,
-                                                                                        model,
-                                                                                        lower_band)
+                                            antenna_model_profile = self.search_profile_for_each_change_in_tilt(etilt,
+                                                                                                                change,
+                                                                                                                _antenna_model_vs_profile_map,
+                                                                                                                model,
+                                                                                                                current_band)
+                                            if antenna_model_profile is not None:
+                                                print("Derived antenna-model-profile is = {}".format(
+                                                    antenna_model_profile))
+                                                return antenna_model_profile
                                         else:
-                                            return None
+                                            print("No profile was found after changing band to {}".format(current_band))
+                                    # common part end
                                 else:
                                     return None
+            else:
+                print("Tilt is = 0 so no more searching for profile")
+                return None
 
     def search_at_lte_carrier_and_cgi_file(self, sd_input_row, lte_carrier_ob,sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map,e_tilt_tolerance ):
         # Among the input only n is a immutable object, we need to return the new object referred by n
@@ -226,47 +310,70 @@ class DataProcessor(FileReader):
 
         antenna_model = self.remove_special_char(matching_cgi_row[self.cgi_file_fields_required[9]])
         antenna_e_tilt = matching_cgi_row[self.cgi_file_fields_required[10]]
-        band: int = self.remove_special_char(matching_cgi_row[self.cgi_file_fields_required[11]]) # only numbers are extracted from band by reader method
+        band: int = matching_cgi_row[self.cgi_file_fields_required[11]] # only numbers are extracted from band by reader method
+        print("band derived from cgi_row is {}".format(band))
         antenna_model_antenna_e_tilt_key = "{}-{}-{}".format(antenna_model, antenna_e_tilt, band)
+
         try:
-            # TODO moderate the profile search with a tolerance of electrical tilt based on configuration
-            # antenna_model_profile = _antenna_model_vs_profile_map[antenna_model_antenna_e_tilt_key]
-            antenna_model_profile = self.get_profile_for_a_model_etilt_band_key(antenna_model, antenna_e_tilt, band, _antenna_model_vs_profile_map, tolerance=e_tilt_tolerance)
+            antenna_model_profile = self.get_profile_for_a_model_etilt_band_key(antenna_model, antenna_e_tilt, band,
+                                                                                _antenna_model_vs_profile_map,
+                                                                                tolerance=e_tilt_tolerance)
+        except :
+            print(
+                "Profile from planner {} was not found into source of profiles files, trying with competitive antenna-model".format(
+                    antenna_model_antenna_e_tilt_key))
+            # TODO try with compititive antenna model
+            try:
+                compititive_ant_model = self.competitive_ant_model_dict[antenna_model]
+                antenna_model_antenna_e_tilt_key = "{}-{}-{}".format(compititive_ant_model, antenna_e_tilt, band)
+                print("Lookup Key with competitive antenna-model is = {}".format(antenna_model_antenna_e_tilt_key))
+                antenna_model_profile = self.get_profile_for_a_model_etilt_band_key(compititive_ant_model,
+                                                                                    antenna_e_tilt, band,
+                                                                                    _antenna_model_vs_profile_map,
+                                                                                    tolerance=e_tilt_tolerance)
+                if antenna_model_profile is None:
+                    print("Profile from planner {} was not found into source of profiles files".format(
+                        antenna_model_antenna_e_tilt_key))
+                    sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
+                else:
+                    sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
+            except ValueError as ve:
+                print(ve)
+                print("Ignoring exception while looking for a profile, updating by dummy/dummy")
+                sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
+            except KeyError:
+                print("No competitive antenna-model was found, updating by dummy/dummy")
+                sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
+
+        else:
             if antenna_model_profile is None:
                 print(
-                    "Profile from planner {} was not found into source of profiles files, trying with competitive antenna-model".format(
+                    "Antenna-Model from planner {} was not found into source of profiles files, trying with competitive antenna-model".format(
                         antenna_model_antenna_e_tilt_key))
                 # TODO try with compititive antenna model
                 try:
                     compititive_ant_model = self.competitive_ant_model_dict[antenna_model]
                     antenna_model_antenna_e_tilt_key = "{}-{}-{}".format(compititive_ant_model, antenna_e_tilt, band)
+                    print("Lookup Key with competitive antenna-model is = {}".format(antenna_model_antenna_e_tilt_key))
                     antenna_model_profile = self.get_profile_for_a_model_etilt_band_key(compititive_ant_model,
                                                                                         antenna_e_tilt, band,
                                                                                         _antenna_model_vs_profile_map,
                                                                                         tolerance=e_tilt_tolerance)
                     if antenna_model_profile is None:
-                        print("Profile from planner {} was not found into source of profiles files, try after removing special characters from competitive antenna-model".format(
+                        print("Competitive Antenna-Model {} was not found into source of profiles files".format(
                             antenna_model_antenna_e_tilt_key))
                         sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
                     else:
                         sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
-                except ValueError:
+                except ValueError as ve:
+                    print(ve)
                     print("Ignoring exception while looking for a profile, updating by dummy/dummy")
                     sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
                 except KeyError:
-                    print("No competitive module was found, updating by dummy/dummy")
+                    print("No competitive antenna-model was found for {}, so more searching, updating by dummy/dummy".format(antenna_model))
                     sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
-
-                # report_line = "RNC-Sector\t{0}\tthere is a match in GSI file, but corresponding ##ANTENNA-MODEL/E-Tilt/BAND## \t{1}\thas no mathng profile file under profile root,".format(sd_rnc_sector_key, antenna_model_antenna_e_tilt_key)
-                # report[sd_rnc_sector_key].append(report_line)
-                # self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
-                # print(report)
-
             else:
                 sd_input_row[self.SD_fields_need_to_update[9]] = antenna_model_profile
-        except ValueError:
-            print("Ignoring exception while looking for a profile, updating by dummy/dummy")
-            sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
 
     def update_input_row_by_planner(self, sd_input_row, planner_input_row, _antenna_model_vs_profile_map_local, e_tilt_tolerance):  # It will work on the row found on that occation.
         print("Planner input row is : {}".format(planner_input_row))
@@ -294,6 +401,7 @@ class DataProcessor(FileReader):
                 try:
                     compititive_ant_model = self.competitive_ant_model_dict[antenna_model]
                     antenna_model_antenna_e_tilt_key =  "{}-{}-{}".format(compititive_ant_model, antenna_e_tilt, band)
+                    print("Competitive antenna_model_antenna_e_tilt_key is = {}".format(antenna_model_antenna_e_tilt_key))
                     antenna_model_profile = self.get_profile_for_a_model_etilt_band_key(compititive_ant_model, antenna_e_tilt, band, _antenna_model_vs_profile_map_local, tolerance=e_tilt_tolerance)
                     if antenna_model_profile is None:
                         print("Profile from planner {} was not found into source of profiles files".format(
@@ -365,16 +473,17 @@ class DataProcessor(FileReader):
         report = {}
         n = 0
         # self.planner_or_gis
-        if self.planner_or_gis != 'NP' or self.planner_or_gis != 'NPNG':
-            planner_object = self.read_planner_file()
-        else:
+        if self.planner_or_gis == 'NP' or self.planner_or_gis == 'NPNG':
             planner_object = None
+        else:
+            planner_object = self.read_planner_file()
 
-        if self.planner_or_gis != 'NG' or self.planner_or_gis != 'NPNG':
-            gsi_file_ob = self.read_gsi_file()
+        if self.planner_or_gis == 'NG' or self.planner_or_gis == 'NPNG':
+            gsi_file_ob = None
             # print(gsi_file_ob)
         else:
-            gsi_file_ob = None
+            gsi_file_ob = self.read_gsi_file()
+
         sd_object = self.read_sd_antennas_file()
         lte_carrier_ob = self.read_lte_carrier()
         # Here the planner_object and sd_object are dictionary
@@ -410,7 +519,7 @@ class DataProcessor(FileReader):
             else:
                 if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
                     n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key,
-                                                                gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map)
+                                                                gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map, e_tilt_tolerance=e_tilt_tolerance)
                 else:
                     print("No planner no GIS file provided ")
                     break
@@ -460,6 +569,5 @@ def write_report(report_dict: dict, out_put_file_p):
             report_ob.write("{}\t{}\n".format(ind, line))
 
 
-if __name__ == "__main__":
-    print(DataProcessor.remove_special_char("asfddsaf_?;:werqwre_-/\?"))
-
+# if __name__ == "__main__":
+#     print(DataProcessor.remove_special_char("asfddsaf_?;:werqwre_-/\?"))

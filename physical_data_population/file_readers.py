@@ -24,25 +24,25 @@ class FileReader(object):
             self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth', 'Antenna  Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
+            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == "NG" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building']
-            self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
+            self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth', 'Antenna  Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
+            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == "NP" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building']
-            self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
+            self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Antenna Tilt-Mechanical', 'Azimuth', 'Antenna  Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
+            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
         else:
@@ -119,8 +119,6 @@ class FileReader(object):
                     # Insert data into dict, having rnc_id_sector_key as key for each top level dict item
                     planner_dict_out[rnc_id_sector_key] = row
                 return planner_dict_out
-
-
 
     def read_sd_antennas_file(self):
         if self.__validate_fields(self.sd_file_path):
@@ -206,32 +204,36 @@ class FileReader(object):
                     cell_object = row[position]  # getting the cell using cell_position as an index of row, it is a constant
                     # time operation, output like -> Cell(r=1, c=3, v='EKOL0000KONG')
                     # Next Band should be replaced by index of cgi_fields
-                    LTE_CGI = None
-                    if col_name == self.cgi_file_fields_required[0]:
-                        LTE_CGI = cell_object.v
-                        col_name_data[col_name] = LTE_CGI
-                    elif col_name == self.cgi_file_fields_required[11] and cell_object.v is not None:
+
+                    if col_name == self.cgi_file_fields_required[11] and cell_object.v is not None:
                         # print(int(cell.v))
-                        band = self.remove_all_except_number(str(cell_object.v))
-                        col_name_data[col_name] = int(band)
+                        print("band read from cgi, and before removing nonnumeric  is {}".format(cell_object.v))
+                        band = self.remove_special_char(str(cell_object.v))
+                        print("band read from cgi, and after removing nonnumeric  is {}".format(band))
+                        col_name_data[col_name] = int(band.split(".")[0])
                     # TODO Next etilt is, this value need some exception handling
                     elif col_name == self.cgi_file_fields_required[10] and cell_object.v is not None and cell_object.v != 'NA':
                         # print("etilt is {}".format(cell_object.v), end="\t")
-                        etilt = self.remove_all_except_number(str(cell_object.v))
+                        etilt = self.remove_special_char(str(cell_object.v))
                         try:
-                            col_name_data[col_name] = int(etilt)
+                            col_name_data[col_name] = int(etilt.split(".")[0])
                         except ValueError:
-                            print("Etilt {} was not valid, setting it as 0, for LTE_CGI= {}".format(cell_object.v, LTE_CGI))
+                            print("Etilt {} was not valid, setting it as 0".format(cell_object.v))
                             col_name_data[col_name] = 0
                     elif col_name == self.cgi_file_fields_required[0] and cell_object.v is not None:
                         # print(col_name)
                         lte_cgi = str(cell_object.v)
                         # print(lte_cgi)
                         lte_cgi_striped = self.remove_all_except_number(lte_cgi)
-                        # print("lte_cgi_stipped = {}".format(lte_cgi_striped))
+                        print("lte_cgi_stipped = {}".format(lte_cgi_striped))
                         col_name_data[col_name] = lte_cgi_striped
+                    elif col_name == self.cgi_file_fields_required[7]:
+                        mtilt = cell_object.v
+                        if mtilt == "IBS" or mtilt == "NA":
+                            mtilt = 0
+                        col_name_data[col_name] = mtilt
                     else:
-                        col_name_data[col_name] = cell_object.v
+                        col_name_data[col_name] = str(cell_object.v)
                 # Next line we are making the first field 'LTE_CGI' as key for each record
                 data_dict["{0}".format(col_name_data[self.cgi_file_fields_required[0]])] = col_name_data
         return data_dict
