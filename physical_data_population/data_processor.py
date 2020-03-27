@@ -292,9 +292,26 @@ class DataProcessor(FileReader):
         sd_input_row[self.SD_fields_need_to_update[3]] = matching_cgi_row[self.cgi_file_fields_required[3]]
         sd_input_row[self.SD_fields_need_to_update[4]] = matching_cgi_row[self.cgi_file_fields_required[4]]
         sd_input_row[self.SD_fields_need_to_update[5]] = matching_cgi_row[self.cgi_file_fields_required[5]]
-        sd_input_row[self.SD_fields_need_to_update[6]] = matching_cgi_row[self.cgi_file_fields_required[6]]
-        sd_input_row[self.SD_fields_need_to_update[7]] = matching_cgi_row[self.cgi_file_fields_required[7]]
-        sd_input_row[self.SD_fields_need_to_update[8]] = matching_cgi_row[self.cgi_file_fields_required[8]]
+        height = matching_cgi_row[self.cgi_file_fields_required[6]]
+        if isinstance(height, str):
+            print("Report: Incorrect input for height {}, updating by 0.0 ".format(height))
+            sd_input_row[self.SD_fields_need_to_update[6]] = float("0.0")
+        else:
+            sd_input_row[self.SD_fields_need_to_update[6]] = height
+
+        mtilt = matching_cgi_row[self.cgi_file_fields_required[7]]
+        if isinstance(mtilt, str):
+            print("Report: Incorrect input for height {}, updating by 0.0 ".format(mtilt))
+            sd_input_row[self.SD_fields_need_to_update[7]] = float("0.0")
+        else:
+            sd_input_row[self.SD_fields_need_to_update[7]] = mtilt
+
+        azimuth = matching_cgi_row[self.cgi_file_fields_required[8]]
+        if isinstance(azimuth, str):
+            print("Report: Incorrect input for height {}, updating by 0.0 ".format(azimuth))
+            sd_input_row[self.SD_fields_need_to_update[8]] = float("0.0")
+        else:
+            sd_input_row[self.SD_fields_need_to_update[8]] = azimuth
         # 9th field is antenna-model, 10th field was a late requirement so remain un-arranged
         active_status = matching_cgi_row[self.cgi_file_fields_required[12]]
         if active_status.upper() == 'ACTIVE':
@@ -381,9 +398,26 @@ class DataProcessor(FileReader):
         sd_input_row[self.SD_fields_need_to_update[3]] = planner_input_row[self.planner_fields_required[3]]
         sd_input_row[self.SD_fields_need_to_update[4]] = planner_input_row[self.planner_fields_required[4]]
         sd_input_row[self.SD_fields_need_to_update[5]] = planner_input_row[self.planner_fields_required[5]]
-        sd_input_row[self.SD_fields_need_to_update[6]] = planner_input_row[self.planner_fields_required[6]]
-        sd_input_row[self.SD_fields_need_to_update[7]] = planner_input_row[self.planner_fields_required[7]]
-        sd_input_row[self.SD_fields_need_to_update[8]] = planner_input_row[self.planner_fields_required[8]]
+        height = planner_input_row[self.cgi_file_fields_required[6]]
+        if isinstance(height, str):
+            print("Report: Incorrect input for height {}, updating by 0.0 ".format(height))
+            sd_input_row[self.SD_fields_need_to_update[6]] = float("0.0")
+        else:
+            sd_input_row[self.SD_fields_need_to_update[6]] = height
+
+        mtilt = planner_input_row[self.cgi_file_fields_required[7]]
+        if isinstance(mtilt, str):
+            print("Report: Incorrect input for height {}, updating by 0.0 ".format(mtilt))
+            sd_input_row[self.SD_fields_need_to_update[7]] = float("0.0")
+        else:
+            sd_input_row[self.SD_fields_need_to_update[7]] = mtilt
+
+        azimuth = planner_input_row[self.cgi_file_fields_required[8]]
+        if isinstance(azimuth, str):
+            print("Report: Incorrect input for height {}, updating by 0.0 ".format(azimuth))
+            sd_input_row[self.SD_fields_need_to_update[8]] = float("0.0")
+        else:
+            sd_input_row[self.SD_fields_need_to_update[8]] = azimuth
         # print("sd_input_row_updated = {}".format(sd_input_row))
         # We populate antenna/profile at antenna-Model field
         antenna_model = self.remove_special_char(planner_input_row[self.planner_fields_required[9]])
@@ -422,15 +456,16 @@ class DataProcessor(FileReader):
             sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'
 
     def update_input_row_by_blank(self, sd_input_row: dict):  # This method modify directly the object, sd_input_row
-        sd_input_row[self.SD_fields_need_to_update[2]] = None   # 'NodeB Longitude'
-        sd_input_row[self.SD_fields_need_to_update[3]] = None   # 'NodeB Latitude'
-        sd_input_row[self.SD_fields_need_to_update[4]] = None   # 'Antenna Longitude'
-        sd_input_row[self.SD_fields_need_to_update[5]] = None   # 'Antenna Latitude'
-        sd_input_row[self.SD_fields_need_to_update[6]] = None   # 'Height'
-        sd_input_row[self.SD_fields_need_to_update[7]] = None   # 'Mechanical DownTilt'
-        sd_input_row[self.SD_fields_need_to_update[8]] = None   # 'Azimuth'
+        print("No match found for sector {}, updating fields by 0, or 0.0 or dummy/dummy based on their data type".format(sd_input_row[self.SD_fields_need_to_update[1]]))
+        sd_input_row[self.SD_fields_need_to_update[2]] = float("0.0")   # 'NodeB Longitude'
+        sd_input_row[self.SD_fields_need_to_update[3]] = float("0.0")   # 'NodeB Latitude'
+        sd_input_row[self.SD_fields_need_to_update[4]] = float("0.0")   # 'Antenna Longitude'
+        sd_input_row[self.SD_fields_need_to_update[5]] = float("0.0")   # 'Antenna Latitude'
+        sd_input_row[self.SD_fields_need_to_update[6]] = int("0")   # 'Height'
+        sd_input_row[self.SD_fields_need_to_update[7]] = int("0")   # 'Mechanical DownTilt'
+        sd_input_row[self.SD_fields_need_to_update[8]] = int("0")   # 'Azimuth'
         sd_input_row[self.SD_fields_need_to_update[9]] = 'dummy/dummy'   # 'Antenna Model'
-        sd_input_row[self.SD_fields_need_to_update[10]] = None  # 'Active'
+        sd_input_row[self.SD_fields_need_to_update[10]] = int("0")  # 'Active'
 
     @staticmethod
     def get_mcc_mnc_sector_carrier_key(sector_carrier_name, mcc, mnc):
@@ -492,37 +527,38 @@ class DataProcessor(FileReader):
         _antenna_model_vs_profile_map = _profile_reader.create_antenna_model_vs_profile_map()
         print("_antenna_model_vs_profile_map from profile directory:- \n {}".format(_antenna_model_vs_profile_map))
         for sd_rnc_sector_key, sd_input_row in sd_object.items():
-            report[sd_rnc_sector_key] = []
-            # take a key from SD-ob
-            if planner_object is not None:
-                try:
-                    # search for the key at planner-ob
-                    matching_planner_input = planner_object[sd_rnc_sector_key]
-                    # Now I have corresponding records from planner and SD, they are OrderDict object
-                    print("Match found for {} into planner ".format(sd_rnc_sector_key))
-                    planner_input_row = matching_planner_input
-                    self.update_input_row_by_planner(sd_input_row, planner_input_row, _antenna_model_vs_profile_map, e_tilt_tolerance)
-                    sd_ob_out[n] = sd_input_row
-                    n += 1
-                    self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
-                except KeyError:
-                    print("Key {} not found into Planner ".format(sd_rnc_sector_key))
-                    report_line = "RNC-Sector\t{0}\thas No match in 1st-level-planner file, process will look for lte_carrier, and GSI files".format(
-                        sd_rnc_sector_key)
-                    report[sd_rnc_sector_key].append(report_line)
-                    # TODO need to add lookup with lte_carrier and SGI-file
-                    if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
-                        n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map, e_tilt_tolerance=e_tilt_tolerance)
-                    else:
-                        print("GSI file not provided, so looking for next entry into SD ")
-                        continue
-            else:
-                if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
-                    n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key,
-                                                                gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map, e_tilt_tolerance=e_tilt_tolerance)
+            if sd_input_row[self.SD_fields_need_to_update[12]] == self.technology:
+                report[sd_rnc_sector_key] = []
+                # take a key from SD-ob
+                if planner_object is not None:
+                    try:
+                        # search for the key at planner-ob
+                        matching_planner_input = planner_object[sd_rnc_sector_key]
+                        # Now I have corresponding records from planner and SD, they are OrderDict object
+                        print("Match found for {} into planner ".format(sd_rnc_sector_key))
+                        planner_input_row = matching_planner_input
+                        self.update_input_row_by_planner(sd_input_row, planner_input_row, _antenna_model_vs_profile_map, e_tilt_tolerance)
+                        sd_ob_out[n] = sd_input_row
+                        n += 1
+                        self.report_missing_attributes(report, sd_input_row, sd_rnc_sector_key)
+                    except KeyError:
+                        print("Key {} not found into Planner ".format(sd_rnc_sector_key))
+                        report_line = "RNC-Sector\t{0}\thas No match in 1st-level-planner file, process will look for lte_carrier, and GSI files".format(
+                            sd_rnc_sector_key)
+                        report[sd_rnc_sector_key].append(report_line)
+                        # TODO need to add lookup with lte_carrier and SGI-file
+                        if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
+                            n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key, gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map, e_tilt_tolerance=e_tilt_tolerance)
+                        else:
+                            print("GSI file not provided, so looking for next entry into SD ")
+                            continue
                 else:
-                    print("No planner no GIS file provided ")
-                    break
+                    if self.planner_or_gis != 'NG' and self.planner_or_gis != 'NPNG':
+                        n = self.search_at_lte_carrier_and_cgi_file(sd_input_row, lte_carrier_ob, sd_rnc_sector_key,
+                                                                    gsi_file_ob, sd_ob_out, n, report, _antenna_model_vs_profile_map, e_tilt_tolerance=e_tilt_tolerance)
+                    else:
+                        print("No planner no GIS file provided ")
+                        break
         return sd_ob_out, report
 
 

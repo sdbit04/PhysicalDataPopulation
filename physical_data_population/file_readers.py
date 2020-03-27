@@ -20,7 +20,7 @@ class FileReader(object):
 
         if self.technology.upper() == 'LTE' and self.planner_or_gis == "" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building']
+            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building', 'Technology']
             self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
@@ -29,7 +29,7 @@ class FileReader(object):
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == "NG" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building']
+            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building', 'Technology']
             self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
@@ -38,7 +38,7 @@ class FileReader(object):
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == "NP" and self.gis_type == 'airtel_kol':
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
-            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building']
+            self.SD_fields_need_to_update = ['RNC Id', 'Sector Name', 'NodeB Longitude', 'NodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Active', 'In Building', 'Technology']
             self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
@@ -198,6 +198,12 @@ class FileReader(object):
                 col_name_data = {}  # dict for each data row
                 # print(row[22])
                 # print(row[3])  ==>  Cell(r=1, c=3, v='EKOL0000KONG')
+                tower_type = None
+                for col_name, position in col_name_position.items():
+                    cell_object_1 = row[position]
+                    # Note tower type
+                    if col_name == self.cgi_file_fields_required[13]:
+                        tower_type = str(cell_object_1.v)
 
                 for col_name, position in col_name_position.items():  # Seems a quadratic, but this iteration is
                     # constant in count
@@ -207,9 +213,9 @@ class FileReader(object):
 
                     if col_name == self.cgi_file_fields_required[11] and cell_object.v is not None:
                         # print(int(cell.v))
-                        print("band read from cgi, and before removing nonnumeric  is {}".format(cell_object.v))
+                        # print("band read from cgi, and before removing nonnumeric  is {}".format(cell_object.v))
                         band = self.remove_special_char(str(cell_object.v))
-                        print("band read from cgi, and after removing nonnumeric  is {}".format(band))
+                        # print("band read from cgi, and after removing nonnumeric  is {}".format(band))
                         col_name_data[col_name] = int(band.split(".")[0])
                     # TODO Next etilt is, this value need some exception handling
                     elif col_name == self.cgi_file_fields_required[10] and cell_object.v is not None and cell_object.v != 'NA':
@@ -225,13 +231,62 @@ class FileReader(object):
                         lte_cgi = str(cell_object.v)
                         # print(lte_cgi)
                         lte_cgi_striped = self.remove_all_except_number(lte_cgi)
-                        print("lte_cgi_stipped = {}".format(lte_cgi_striped))
+                        # print("lte_cgi_stipped = {}".format(lte_cgi_striped))
                         col_name_data[col_name] = lte_cgi_striped
                     elif col_name == self.cgi_file_fields_required[7]:
                         mtilt = cell_object.v
-                        if mtilt == "IBS" or mtilt == "NA":
-                            mtilt = 0
+                        if tower_type == "IBS" or tower_type.lower() == "indoor":
+                            try:
+                                mtilt = float(mtilt)
+                            except ValueError:
+                                mtilt = float("0.0")
+                        else:
+                            try:
+                                mtilt = float(mtilt)
+                            except ValueError:
+                                mtilt = str(mtilt)  # TODO This string into mtilt need to be handled during updation of antennas.txt
                         col_name_data[col_name] = mtilt
+                    elif col_name == self.cgi_file_fields_required[6]:
+                        hight = cell_object.v
+                        if tower_type == "IBS" or tower_type.lower() == "indoor":
+                            try:
+                                hight = float(hight)
+                            except ValueError:
+                                hight = float("0.0")
+                        else:
+                            try:
+                                hight = float(hight)
+                            except ValueError:
+                                hight = str(hight)  # TODO This string into mtilt need to be handled during updation of antennas.txt
+                        col_name_data[col_name] = hight
+                    elif col_name == self.cgi_file_fields_required[8]:
+                        azimuth = cell_object.v
+                        if tower_type == "IBS" or tower_type.lower() == "indoor":
+                            try:
+                                azimuth = float(azimuth)
+                            except ValueError:
+                                azimuth = float("0.0")
+                        else:
+                            try:
+                                azimuth = float(azimuth)
+                            except ValueError:
+                                azimuth = str(azimuth)  # TODO This string into mtilt need to be handled during updation of antennas.txt
+                        col_name_data[col_name] = azimuth
+                    elif col_name == self.cgi_file_fields_required[2]:
+                        longitude = cell_object.v
+                        if longitude == "" or longitude is None or longitude == "NA":
+                            longitude = float("0.0")
+                        else:
+                            longitude = float(longitude)
+                        col_name_data[col_name] = longitude
+                    elif col_name == self.cgi_file_fields_required[3]:
+                        latitude = cell_object.v
+                        if latitude == "" or latitude is None or latitude == "NA":
+                            latitude = float("0.0")
+                        else:
+                            latitude = float(latitude)
+                        col_name_data[col_name] = latitude
+
                     else:
                         col_name_data[col_name] = str(cell_object.v)
                 # Next line we are making the first field 'LTE_CGI' as key for each record
