@@ -1,6 +1,7 @@
 import csv
 from pyxlsb import *
 import xlrd
+import os
 
 
 class FileReader(object):
@@ -60,7 +61,7 @@ class FileReader(object):
         wb = xlrd.open_workbook(xlsx_file_path)
         sh = wb.sheet_by_name(technology)
         with open(csv_file_path, 'w') as your_csv_file:
-            wr = csv.writer(your_csv_file, quoting=csv.QUOTE_ALL)
+            wr = csv.writer(your_csv_file)
             for rownum in range(sh.nrows):
                 wr.writerow(sh.row_values(rownum))
 
@@ -103,8 +104,11 @@ class FileReader(object):
             with open(csv_planner_path, mode='r') as sd_ob:
                 # , encoding='utf-8'
                 # As we convert the planner.xlsx file into a tab delimited file, So I made it hard coded in next line
-                sd_dict = csv.DictReader(sd_ob, delimiter='\t')
+                # sd_dict = csv.DictReader(sd_ob, delimiter='\t')
+                sd_dict = csv.DictReader(sd_ob, delimiter=',')
+                print(sd_dict)
                 for row in sd_dict:
+                    print(row)
                     rnc_id_sector_key = "{}-{}".format(row[self.planner_fields_required[0]],
                                                        row[self.planner_fields_required[1]])
                     # Insert data into dict, having rnc_id_sector_key as key for each top level dict item
@@ -128,8 +132,14 @@ class FileReader(object):
             raise NotImplementedError("SD input file was not valid, should be in tab separated csv file")
 
     def read_planner_file(self):
-        if self.__validate_fields(self.planner_file_path):
-            planner_dict_out = self.__read_csv_planner(self.planner_file_path)
+        currnet_path = os.path.dirname(__file__)
+        print("current path = {}".format(currnet_path))
+        temp_csv_file_path = os.path.join(currnet_path, "temp_artifact\\planner\\planner.csv")
+        print("temp_csv_file_path = {}".format(temp_csv_file_path))
+        self.csv_from_excel(self.planner_file_path, temp_csv_file_path)
+
+        if self.__validate_fields(temp_csv_file_path):
+            planner_dict_out = self.__read_csv_planner(temp_csv_file_path)
             return planner_dict_out
         else:
             raise NotImplementedError("Planner Input file was not valid, should be in tab separated csv file")
@@ -320,11 +330,12 @@ class FileReader(object):
 
 
 if __name__ == "__main__":
-    CGI_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\4G GIS Data Kolkata.xlsb"
-    lte_carrier = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\lte-carriers.txt"
-    planner_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\Planning_input_4G.txt"
-    competitive_model = "D:\\D_drive_BACKUP\MENTOR\\Airtel\\For_Analysis\\Competitive_model\\competitive_profile.txt"
-    reader = FileReader(technology='LTE', lte_carrier_path=lte_carrier, sd_file_path=lte_carrier, planner_file_path=lte_carrier, cgi_file_path=CGI_file, competitive_model_path=competitive_model )
-    competitive_model_dict = reader.read_competitive_model_list()
-    print(competitive_model_dict)
-
+    # CGI_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\4G GIS Data Kolkata.xlsb"
+    # lte_carrier = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\New\\lte-carriers.txt"
+    # planner_file = "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\Planning_input_4G.txt"
+    # competitive_model = "D:\\D_drive_BACKUP\MENTOR\\Airtel\\For_Analysis\\Competitive_model\\competitive_profile.txt"
+    # reader = FileReader(technology='LTE', lte_carrier_path=lte_carrier, sd_file_path=lte_carrier, planner_file_path=lte_carrier, cgi_file_path=CGI_file, competitive_model_path=competitive_model )
+    # competitive_model_dict = reader.read_competitive_model_list()
+    # print(competitive_model_dict)
+    dir = os.path.dirname(__file__)
+    print(dir)

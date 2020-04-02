@@ -33,7 +33,7 @@ def run_physical_data_population(config_path_p):
     else:
         cgi_file = None
     if plan_gis != 'NP' and plan_gis != 'NPNG':
-        planning_file = configuration_ob["planning_file_csv"]
+        planning_file = configuration_ob["planning_file_xlsx"]
     else:
         planning_file = None
     try:
@@ -85,5 +85,4 @@ def main_method():
 
 
 if __name__ == "__main__":
-
     main_method()

@@ -1,7 +1,7 @@
 import json
 import time
 import traceback
-
+import os
 
 def read_configuration(config_path_p):
     config_path = config_path_p
@@ -39,18 +39,20 @@ def read_configuration(config_path_p):
             except KeyError as Directory_names_for_NE_e:
                 raise Directory_names_for_NE_e
             try:
-                planning_file = config_json_ob["planning_file_csv"]
+                planning_file = config_json_ob["planning_file_xlsx"]
                 print(planning_file)
-            except KeyError as planning_file_e:
+            except KeyError:
                 planning_or_gis = "{}{}".format(planning_or_gis, 'NP')
-                print("Not getting {}".format(planning_file_e))
-                print(traceback.print_exc())
+                print(planning_or_gis)
+                print("Planner file was not given, so Look-up will be based on GSI file only")
+
             try:
                 CGI_file = config_json_ob["GSI_file_xlsb"]
                 print(CGI_file)
-            except KeyError as CGI_file_e:
+            except KeyError:
                 planning_or_gis = "{}{}".format(planning_or_gis, 'NG')
-                print("Not getting {}".format(CGI_file_e))
+                print(planning_or_gis)
+                print("GSI.xlsb file were not given")
 
             try:
                 profile_root_path = config_json_ob["profile_root_path"]
@@ -64,7 +66,8 @@ def read_configuration(config_path_p):
                 raise out_put_data_dict_dir_e
             time.sleep(1)
             if planning_or_gis == "NPNG":
-                raise ValueError("Neither Planner nor GIS file was provided, stopping the process")
+                print("Neither Planner nor GIS file was provided, stopping the process")
+                exit(1)
             return config_json_ob, planning_or_gis
 
 
