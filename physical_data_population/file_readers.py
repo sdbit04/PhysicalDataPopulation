@@ -1,6 +1,12 @@
 import csv
-from pyxlsb import *
-import xlrd
+try:
+    from pyxlsb import *
+except ModuleNotFoundError:
+    raise ModuleNotFoundError("pyxlsb lib is not installed, please navigate to project-installation-dir\physical_data_population\pypi, and install xlrd using command > 'pip install pyxlsb-1.0.6-py2.py3-none-any.whl'")
+try:
+    import xlrd
+except ModuleNotFoundError:
+    raise ModuleNotFoundError("xlrd lib is not installed, please navigate to project-installation-dir\physical_data_population\pypi, and install xlrd using command > 'pip install xlrd-1.2.0-py2.py3-none-any.whl' ")
 import os
 
 
@@ -25,7 +31,7 @@ class FileReader(object):
             self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt','Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
+            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == "NG" and self.gis_type == 'airtel_kol':
@@ -34,7 +40,7 @@ class FileReader(object):
             self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
+            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
         elif self.technology.upper() == 'LTE' and self.planner_or_gis == "NP" and self.gis_type == 'airtel_kol':
@@ -43,7 +49,7 @@ class FileReader(object):
             self.planner_fields_required = ['RNC Id', 'Sector Name', 'eNodeB Longitude', 'eNodeB Latitude','Antenna Longitude', 'Antenna Latitude', 'Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
             # TODO based on formula lat long calculation will be done from GIS
-            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height (m)', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
+            self.cgi_file_fields_required = ['LTE CGI', 'dummy', 'Longitude', 'Latitude', 'Longitude', 'Latitude',                       'Antenna Height', 'Mechanical DownTilt', 'Azimuth', 'Antenna Model', 'Antenna Tilt-Electrical', 'Band', 'Status Active / Locked', 'Tower Type']
             self.lte_carrier_fields_required = ['TAC', 'Sector Name', 'MCC', 'MNC', 'Sector Carrier Name']
             # Note - Please don't insert any value into the below lists, the index of the fields are used in program
         else:
@@ -106,9 +112,9 @@ class FileReader(object):
                 # As we convert the planner.xlsx file into a tab delimited file, So I made it hard coded in next line
                 # sd_dict = csv.DictReader(sd_ob, delimiter='\t')
                 sd_dict = csv.DictReader(sd_ob, delimiter=',')
-                print(sd_dict)
+                # print(sd_dict)
                 for row in sd_dict:
-                    print(row)
+                    # print(row)
                     rnc_id_sector_key = "{}-{}".format(row[self.planner_fields_required[0]],
                                                        row[self.planner_fields_required[1]])
                     # Insert data into dict, having rnc_id_sector_key as key for each top level dict item
@@ -180,7 +186,8 @@ class FileReader(object):
                     col_name_position[cell.v] = cell.c
                 elif cell.v == self.cgi_file_fields_required[5]:
                     col_name_position[cell.v] = cell.c
-                elif cell.v == self.cgi_file_fields_required[6]:
+                elif str(cell.v).startswith(self.cgi_file_fields_required[6]):
+                    self.cgi_file_fields_required[6] = str(cell.v) # Here I am updating object level value of cgi_file_fields_required
                     col_name_position[cell.v] = cell.c
                 elif cell.v == self.cgi_file_fields_required[7]:
                     col_name_position[cell.v] = cell.c
@@ -192,7 +199,7 @@ class FileReader(object):
                 elif str(cell.v).__contains__(self.cgi_file_fields_required[10]):
                     print("CGI 10th field is {}".format(self.cgi_file_fields_required[10]))
                     # print(str(cell.v))
-                    col_name_position[self.cgi_file_fields_required[10]] = cell.c
+                    col_name_position[self.cgi_file_fields_required[10]] = cell.c  # Here I have taken different approch, didnt update object level list
                 elif cell.v == self.cgi_file_fields_required[11]:
                     col_name_position[cell.v] = cell.c
                 elif cell.v == self.cgi_file_fields_required[12]:
@@ -202,6 +209,7 @@ class FileReader(object):
                 else:
                     pass
             # Following statement will print the header with their column position as key:value pair
+
             print(col_name_position)
 
             for row in rows_iter:  # accessing all data rows
