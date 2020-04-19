@@ -1,12 +1,15 @@
 import csv
-try:
-    from pyxlsb import *
-except ModuleNotFoundError:
-    raise ModuleNotFoundError("pyxlsb lib is not installed, please navigate to project-installation-dir\physical_data_population\pypi, and install xlrd using command > 'pip install pyxlsb-1.0.6-py2.py3-none-any.whl'")
-try:
-    import xlrd
-except ModuleNotFoundError:
-    raise ModuleNotFoundError("xlrd lib is not installed, please navigate to project-installation-dir\physical_data_population\pypi, and install xlrd using command > 'pip install xlrd-1.2.0-py2.py3-none-any.whl' ")
+from physical_data_population.pyxlsb_ext import *
+from physical_data_population import xlrd_ext
+# try:
+#     from pyxlsb import *
+# except ModuleNotFoundError:
+#     raise ModuleNotFoundError("pyxlsb lib is not installed, please navigate to project-installation-dir\physical_data_population\pypi, and install xlrd using command > 'pip install pyxlsb-1.0.6-py2.py3-none-any.whl'")
+
+# try:
+#     import xlrd
+# except ModuleNotFoundError:
+#     raise ModuleNotFoundError("xlrd lib is not installed, please navigate to project-installation-dir\physical_data_population\pypi, and install xlrd using command > 'pip install xlrd-1.2.0-py2.py3-none-any.whl' ")
 import os
 
 
@@ -64,12 +67,17 @@ class FileReader(object):
 
     def csv_from_excel(self, xlsx_file_path, csv_file_path):
         technology = self.technology
-        wb = xlrd.open_workbook(xlsx_file_path)
-        sh = wb.sheet_by_name(technology)
-        with open(csv_file_path, 'w') as your_csv_file:
-            wr = csv.writer(your_csv_file)
-            for rownum in range(sh.nrows):
-                wr.writerow(sh.row_values(rownum))
+        wb = xlrd_ext.open_workbook(xlsx_file_path)
+        try:
+            sh = wb.sheet_by_name(technology)
+        except (ValueError, xlrd_ext.XLRDError):
+            print("In planner file, There is not work sheet named as {} ".format(technology))
+            exit(1)
+        else:
+            with open(csv_file_path, 'w') as your_csv_file:
+                wr = csv.writer(your_csv_file)
+                for rownum in range(sh.nrows):
+                    wr.writerow(sh.row_values(rownum))
 
     def __validate_fields(self, csv_sd_planner_path):
         # csv_sd_planner_path = csv_sd_planner_path

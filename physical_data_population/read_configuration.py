@@ -12,13 +12,14 @@ def read_configuration(config_path_p):
         except json.decoder.JSONDecodeError:
             print("""Please check config_phy.ini file, make sure you have "sd_path","planning_file", "out_put_data_dict_dir", "profile_root_path" with their value, each key and value should be in " ",
             Example: 
-            {"technology": "LTE",
-            "Network_directory_path": "D:\\D_drive_BACKUP\\Study\\PycharmProjects\\PhysicalDataPopulation\\Input_data_deep\\Network",
-            "Directory_names_for_NE": "ZTE_LTE_KOL_24, ZTE_LTE_KOL_25",
-            "planning_file_csv": "D:\\Input_data_deep\\Planning_input.txt",            
-            "GSI_file_xlsb": "D:\\Input_data_deep\\SGI_input.xlsb",
-            "profile_root_path": "D:\\Input_data_deep\\Ant Model"
-            "out_put_data_dict_dir": "D:\\out_dir",
+           {"technology": "LTE",
+             "Network_directory_path": "D:\\Physical_data_creation\\data\\network",
+             "Directory_names_for_NE": "OSS4_SF,OSS5_SF,OSS6_SF,OSS7_SF,OSS8_SF,OSS9_SF,OSS10_SF,OSS11_SF",
+             "GSI_file_xlsb" : "D:\\D_drive_BACKUP\\MENTOR\\TEOCO\\Kolkata\\Plan Data1\\Planning Kolkata.xlsb",
+             "planning_file_xlsx" : "D:\\D_drive_BACKUP\\MENTOR\\TEOCO\\Kolkata\\Plan Data1\\Kolkata.xlsx",
+             "out_put_data_dict_dir" : "D:\\D_drive_BACKUP\\MENTOR\\TEOCO\\Kolkata\\out",
+             "profile_root_path": "D:\\D_drive_BACKUP\\MENTOR\\TEOCO\\For_Analysis\\TEOCO Production Antenna Model",
+             "Tolerance_of_E_tilt": 5
             }""")
             time.sleep(1)
             raise json.decoder.JSONDecodeError
